@@ -4,6 +4,8 @@ using UnityEngine;
 using System.Runtime.InteropServices;
 using System;
 using System.IO;
+using System.Linq;
+
 namespace OpenVDBPointsUnity
 {
     /// <summary>Native interface for OpenVDB Points Module</summary> 
@@ -28,6 +30,8 @@ namespace OpenVDBPointsUnity
                 return count;
             }
         }
+        public string Name { get; private set; }
+
         /// <summary>
         /// Constructor that takes an absolute path to the .vdb 
         /// file containing the PointDataGrid and initializes OpenVDB. 
@@ -62,7 +66,8 @@ namespace OpenVDBPointsUnity
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void LoggingCallback(string message);
         /// <summary>The default grid name used to access the PointDataGrid.</summary>
-        private const string gridName = "Points";
+        private const string gridName = "";
+        // private const string gridName = "Points";
         /// <summary>Wrapper for openvdb::initialize.</summary>
         [DllImport(libraryName)]
         private static extern void openvdbInitialize();
@@ -92,6 +97,10 @@ namespace OpenVDBPointsUnity
         /// <remarks>Currently only supports vertex positions (float) and colors (uint8) </remarks>
         [DllImport(libraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern bool convertPLYToVDB(string filename, string outfile, LoggingCallback callback);
+
+        [DllImport(libraryName)]
+        private static extern IntPtr generatePointArrayFromPointGrid(IntPtr gridRef, LoggingCallback cb);
+
         /// <summary>Initializes OpenVDB.</summary>
         private void Initialize()
         {
@@ -147,6 +156,63 @@ namespace OpenVDBPointsUnity
         private static void LogMessage(string message)
         {
             Debug.Log(message);
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct Point
+        {
+            public double x;
+            public double y;
+            public double z;
+        
+            // for debugging
+            public override String ToString()
+            {
+                return "{" + x + ","+ y + "," + z + "}";
+            }
+
+            public Vector3 ToVec3()
+            {
+                return new Vector3((float)x, (float)y, (float)z);
+            }
+        }
+
+        /// <summary> Converts a VDB grid to an array of Vector3 for mesh construction </summary>
+        public Vector3[] GenerateVertexArray()
+        {
+            if (gridRef != IntPtr.Zero)
+            {
+                return IntPtrToArr<Point>(generatePointArrayFromPointGrid(gridRef, LogMessage), Count).Select(pt => pt.ToVec3()).ToArray();
+            }
+            else
+            {
+                throw new Exception("A PointDataGrid must be loaded in order to generate a point array!");
+            }
+        }
+
+        /// <remarks> Taken from https://bravenewmethod.com/2017/10/30/unity-c-native-plugin-examples/ </remarks>
+        static T[] IntPtrToArr<T>(IntPtr arrPtr, uint arrSize)  // Should be able to improve this with MarshalAsAttribute?
+        {
+            T[] result = new T[arrSize];
+            int offset = 0;
+            int tSize = Marshal.SizeOf(typeof(T));
+            for (int i = 0; i < arrSize; i++)
+            {
+                // Hopefully this works
+                try
+                {
+                    result[i] = (T)Marshal.PtrToStructure(new IntPtr(arrPtr.ToInt32() + offset), typeof(T));
+                }
+                catch
+                {
+                    result[i] = (T)Marshal.PtrToStructure(new IntPtr(arrPtr.ToInt64() + offset), typeof(T));
+                }
+                offset += tSize;
+                Debug.Log(result[i]);
+            }
+
+            Marshal.FreeCoTaskMem(arrPtr);
+            return result;
         }
     }
 }
