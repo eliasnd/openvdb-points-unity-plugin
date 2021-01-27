@@ -101,6 +101,9 @@ namespace OpenVDBPointsUnity
         [DllImport(libraryName)]
         private static extern IntPtr generatePointArrayFromPointGrid(IntPtr gridRef, LoggingCallback cb);
 
+        [DllImport(libraryName)]
+        private static extern IntPtr generateColorArrayFromPointGrid(IntPtr gridRef);
+
         /// <summary>Initializes OpenVDB.</summary>
         private void Initialize()
         {
@@ -159,7 +162,7 @@ namespace OpenVDBPointsUnity
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct Point
+        public struct Vec3d
         {
             public double x;
             public double y;
@@ -171,9 +174,14 @@ namespace OpenVDBPointsUnity
                 return "{" + x + ","+ y + "," + z + "}";
             }
 
-            public Vector3 ToVec3()
+            public Vector3 ToVector3()
             {
                 return new Vector3((float)x, (float)y, (float)z);
+            }
+
+            public Color ToColor()
+            {
+                return new Color((float)x, (float)y, (float)z, 1);
             }
         }
 
@@ -182,7 +190,19 @@ namespace OpenVDBPointsUnity
         {
             if (gridRef != IntPtr.Zero)
             {
-                return IntPtrToArr<Point>(generatePointArrayFromPointGrid(gridRef, LogMessage), Count).Select(pt => pt.ToVec3()).ToArray();
+                return IntPtrToArr<Vec3d>(generatePointArrayFromPointGrid(gridRef, LogMessage), Count).Select(pt => pt.ToVector3()).ToArray();
+            }
+            else
+            {
+                throw new Exception("A PointDataGrid must be loaded in order to generate a point array!");
+            }
+        }
+
+        public Color[] GenerateColorArray()
+        {
+            if (gridRef != IntPtr.Zero)
+            {
+                return IntPtrToArr<Vec3d>(generatePointArrayFromPointGrid(gridRef, LogMessage), Count).Select(pt => pt.ToColor()).ToArray();
             }
             else
             {
