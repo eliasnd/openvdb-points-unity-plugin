@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using UnityEditor.Experimental.AssetImporters;
+using UnityEditor;
 using System.Linq;
 using System;
 
@@ -13,30 +14,38 @@ namespace OpenVDBPointsUnity
     public class VDBImporter : BaseVDBImporter
     {
 
+        public enum Container { Mesh, Texture  }
+
+        [SerializeField] Container container = Container.Mesh;
+
         public override void OnImportAsset(AssetImportContext ctx)
         {
             GetAbsoluteAssetPath(ctx);
             OpenVDBPoints points = new OpenVDBPoints(absoluteAssetPath);
             points.Load();
             uint count = points.Count;
-            Debug.Log(string.Format("Total Points: {0}", count.ToString()));
 
-            var gameObject = new GameObject();
-            Mesh mesh = GenerateMesh(points);
+            if (container == Container.Mesh)
+            {
+                var gameObject = new GameObject();
+                Mesh mesh = GenerateMesh(points);
 
-            var meshFilter = gameObject.AddComponent<MeshFilter>();
-            meshFilter.sharedMesh = mesh;
+                var meshFilter = gameObject.AddComponent<MeshFilter>();
+                meshFilter.sharedMesh = mesh;
 
-            var meshRenderer = gameObject.AddComponent<MeshRenderer>();
-            meshRenderer.sharedMaterial = new Material(Shader.Find("Unlit/Texture"));;
+                var meshRenderer = gameObject.AddComponent<MeshRenderer>();
+                meshRenderer.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/OpenVDBPoints/Editor/Materials/DefaultPoint.mat");
 
-            ctx.AddObjectToAsset("prefab", gameObject);
-            if (mesh != null) ctx.AddObjectToAsset("mesh", mesh);
+                ctx.AddObjectToAsset("prefab", gameObject);
+                if (mesh != null) ctx.AddObjectToAsset("mesh", mesh);
 
-            Texture2D tex = GenerateTexture(points);
-            ctx.AddObjectToAsset("tex", tex);
-
-            // ctx.SetMainObject(gameObject);
+                ctx.SetMainObject(gameObject);
+            }
+            else if (container == Container.Texture)
+            {
+                Texture2D tex = GenerateTexture(points);
+                ctx.AddObjectToAsset("tex", tex);
+            }
         }
 
         public Mesh GenerateMesh(OpenVDBPoints points) 
@@ -91,9 +100,9 @@ namespace OpenVDBPointsUnity
             return tex;
         }
 
-        public void ReadTexture(Texture2D tex, Vector3[] vertices, Color[] colors)
+        public void ReadTexture(Texture2D tex)
         {
-            HashSet<(Vector3 vec, Color col)> pointSet = new HashSet<(Vector3, Color)>();
+            HashSet<(Vector3 vec, Color col)> pointSet = new HashSet<(Vector3, Color)>();   // HashSet to handle repeat points, but probably slow
             
             Color[] pixels = tex.GetPixels();
 
@@ -109,8 +118,11 @@ namespace OpenVDBPointsUnity
                 colorList.Add(col);
             }
 
-            vertices = vertexList.ToArray();
-            colors = colorList.ToArray();
+            Vector3[] vertices = vertexList.ToArray();
+            Color[] colors = colorList.ToArray();
+
+            OpenVDBPoints points = new OpenVDBPoints();
+            points.Load(vertices, colors);
         }
     }
 }

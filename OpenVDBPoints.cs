@@ -44,6 +44,7 @@ namespace OpenVDBPointsUnity
         }
         /// <summary>Parameterless constructor that initializes OpenVDB</summary>
         public OpenVDBPoints() { Initialize(); }
+
         /// <summary>
         /// Finalizer that deletes the <see cref="gridRef">pointer</see> 
         /// to the SharedPointDataGrid reference.
@@ -104,6 +105,9 @@ namespace OpenVDBPointsUnity
         [DllImport(libraryName)]
         private static extern IntPtr generateColorArrayFromPointGrid(IntPtr gridRef);
 
+        [DllImport(libraryName)]
+        private static extern IntPtr arraysToPointGrid(IntPtr positionArr, IntPtr colorArr, int count);
+
         /// <summary>Initializes OpenVDB.</summary>
         private void Initialize()
         {
@@ -128,6 +132,20 @@ namespace OpenVDBPointsUnity
             LoggingCallback logger = cb == null ? LogMessage : cb;
             gridRef = readPointGridFromFile(FilePath, grid, logger);
         }
+
+        /// <summary> Loads a PointDataGrid from point and color arrays. </summary>
+        /// <remarks> This is probably a dumb interface, since the conversion to Vector3 is only used to transfer from the texture to this, but we'll see </remarks>
+        public void Load(Vector3[] points, Color[] colors)
+        {
+            if (points.Length != colors.Length)
+                throw new Exception("Point and color array sizes must match!");
+
+            Vec3d[] ptArr = points.Select(pt => new Vec3d(pt)).ToArray();
+            Vec3d[] colArr = colors.Select(col => new Vec3d(col)).ToArray();
+
+            gridRef = arraysToPointGrid(ArrToIntPtr<Vec3d>(ptArr), ArrToIntPtr<Vec3d>(colArr), points.Length);
+        }
+
         /// <summary>
         /// The total number of points contained in a PointDataGrid referenced by <see cref="gridRef"/>.
         /// </summary>
@@ -183,6 +201,20 @@ namespace OpenVDBPointsUnity
             {
                 return new Color((float)x, (float)y, (float)z, 1);
             }
+
+            public Vec3d(Vector3 vec)
+            {
+                this.x = (double)vec.x;
+                this.y = (double)vec.y;
+                this.z = (double)vec.z;
+            }
+
+            public Vec3d(Color col)
+            {
+                this.x = (double)col.r;
+                this.y = (double)col.g;
+                this.z = (double)col.b;
+            }
         }
 
         /// <summary> Converts a VDB grid to an array of Vector3 for mesh construction </summary>
@@ -233,6 +265,29 @@ namespace OpenVDBPointsUnity
 
             Marshal.FreeCoTaskMem(arrPtr);
             return result;
+        }
+
+        /// <summary> Converts array to int ptr, returns intptr, size </summary>
+        /// <remarks> Originally considered returning size in tuple, but they already have array </remarks>
+        static IntPtr ArrToIntPtr<T>(T[] arr)
+        {
+            int tSize = Marshal.SizeOf(typeof(T));
+            IntPtr arrPtr = Marshal.AllocHGlobal(tSize * arr.Length);
+
+            for (int i = 0; i < arr.Length; i++)
+            {
+                try
+                {
+                    Marshal.StructureToPtr(arr[i], new IntPtr(arrPtr.ToInt32() + (tSize*i)), false);
+
+                }
+                catch
+                {
+                    Marshal.StructureToPtr(arr[i], new IntPtr(arrPtr.ToInt64() + (tSize*i)), false);
+                }
+            }
+
+            return arrPtr;
         }
     }
 }
