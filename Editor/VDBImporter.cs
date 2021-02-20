@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 using UnityEditor.Experimental.AssetImporters;
 using UnityEditor;
@@ -17,6 +18,7 @@ namespace OpenVDBPointsUnity
         public enum Container { Mesh, Texture  }
 
         [SerializeField] Container container = Container.Mesh;
+        [SerializeField] bool centerMesh = false;
 
         public override void OnImportAsset(AssetImportContext ctx)
         {
@@ -24,6 +26,8 @@ namespace OpenVDBPointsUnity
             OpenVDBPoints points = new OpenVDBPoints(absoluteAssetPath);
             points.Load();
             uint count = points.Count;
+
+            Debug.Log("Point Count: " + count);
 
             if (container == Container.Mesh)
             {
@@ -51,10 +55,37 @@ namespace OpenVDBPointsUnity
         public Mesh GenerateMesh(OpenVDBPoints points) 
         {
             Mesh mesh = new Mesh();
+            mesh.indexFormat = points.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
 
             Vector3[] vertices = points.GenerateVertexArray();
+
+            if (centerMesh)
+            {
+                Vector3 min = new Vector3();
+                Vector3 max = new Vector3();
+
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    Vector3 vert = vertices[i];
+                    if (vert.x < min.x)
+                        min.x = vert.x;
+                    else if (vert.x > max.x)
+                        max.x = vert.x;
+
+                    if (vert.y < min.y)
+                        min.y = vert.y;
+                    else if (vert.y > max.y)
+                        max.y = vert.y;
+                }
+
+                Vector3 center = (min + max) / 2;
+
+                vertices = vertices.ToList().Select(vert => vert - center).ToArray();
+            }
+        
             // Set mesh name to grid name here
             mesh.SetVertices(vertices);
+
 
             Color[] colors = points.GenerateColorArray();
 
@@ -64,7 +95,7 @@ namespace OpenVDBPointsUnity
                 Enumerable.Range(0, vertices.Length).ToArray(),
                 MeshTopology.Points, 0
             );
-
+            
             return mesh;
         }
 

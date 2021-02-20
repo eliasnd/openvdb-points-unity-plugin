@@ -67,8 +67,8 @@ namespace OpenVDBPointsUnity
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void LoggingCallback(string message);
         /// <summary>The default grid name used to access the PointDataGrid.</summary>
-        private const string gridName = "";
-        // private const string gridName = "Points";
+        // private const string gridName = "";
+        private const string gridName = "Points";
         /// <summary>Wrapper for openvdb::initialize.</summary>
         [DllImport(libraryName)]
         private static extern void openvdbInitialize();
@@ -260,7 +260,6 @@ namespace OpenVDBPointsUnity
                     result[i] = (T)Marshal.PtrToStructure(new IntPtr(arrPtr.ToInt64() + offset), typeof(T));
                 }
                 offset += tSize;
-                Debug.Log(result[i]);
             }
 
             Marshal.FreeCoTaskMem(arrPtr);
