@@ -25,6 +25,7 @@ namespace OpenVDBPointsUnity
             GetAbsoluteAssetPath(ctx);
             OpenVDBPoints points = new OpenVDBPoints(absoluteAssetPath);
             points.Load();
+            points.InitializeMesh();
             uint count = points.Count;
 
             Debug.Log("Point Count: " + count);
@@ -32,7 +33,8 @@ namespace OpenVDBPointsUnity
             if (container == Container.Mesh)
             {
                 var gameObject = new GameObject();
-                Mesh mesh = GenerateMesh(points);
+                //Mesh mesh = GenerateMesh(points);
+                Mesh mesh = points.mesh;
 
                 var meshFilter = gameObject.AddComponent<MeshFilter>();
                 meshFilter.sharedMesh = mesh;

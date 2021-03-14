@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
+using Unity.Collections;
 using System.Runtime.InteropServices;
 using System;
 using System.IO;
@@ -31,6 +33,8 @@ namespace OpenVDBPointsUnity
             }
         }
         public string Name { get; private set; }
+        private NativeArray<Vertex> vertices;
+        public Mesh mesh { get; private set; }
 
         /// <summary>
         /// Constructor that takes an absolute path to the .vdb 
@@ -108,6 +112,9 @@ namespace OpenVDBPointsUnity
         [DllImport(libraryName)]
         private static extern IntPtr arraysToPointGrid(IntPtr positionArr, IntPtr colorArr, int count);
 
+        [DllImport(libraryName)]
+        unsafe private static extern void populateVertices(void* verts, IntPtr gridRef, LoggingCallback cb);
+
         /// <summary>Initializes OpenVDB.</summary>
         private void Initialize()
         {
@@ -144,6 +151,36 @@ namespace OpenVDBPointsUnity
             Vec3d[] colArr = colors.Select(col => new Vec3d(col)).ToArray();
 
             gridRef = arraysToPointGrid(ArrToIntPtr<Vec3d>(ptArr), ArrToIntPtr<Vec3d>(colArr), points.Length);
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct Vertex
+        {
+            public Vector3 pos;
+            public Color32 color;
+        }
+
+        public void InitializeMesh()
+        {
+            int intCount = (int)Count;  // This is really bad -- should create two arrays and probably meshes for counts > max int
+
+            vertices = new NativeArray<Vertex>(intCount, Allocator.Temp);
+            unsafe {
+                populateVertices(Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(vertices), gridRef, LogMessage);
+            }
+
+            mesh = new Mesh();
+            mesh.SetVertexBufferParams(intCount, new []{
+                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+                new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
+            });
+
+            mesh.SetVertexBufferData(vertices, 0, 0, intCount);
+
+            mesh.SetIndices(
+                Enumerable.Range(0, vertices.Length).ToArray(),
+                MeshTopology.Points, 0
+            );
         }
 
         /// <summary>
