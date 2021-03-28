@@ -15,7 +15,7 @@ namespace OpenVDBPointsUnity
     public class VDBImporter : BaseVDBImporter
     {
 
-        public enum Container { Mesh, Texture  }
+        public enum Container { Mesh, Renderer }
 
         [SerializeField] Container container = Container.Mesh;
         [SerializeField] bool centerMesh = false;
@@ -25,16 +25,13 @@ namespace OpenVDBPointsUnity
             GetAbsoluteAssetPath(ctx);
             OpenVDBPoints points = new OpenVDBPoints(absoluteAssetPath);
             points.Load();
-            points.InitializeMesh();
-            uint count = points.Count;
-
-            Debug.Log("Point Count: " + count);
 
             if (container == Container.Mesh)
             {
                 var gameObject = new GameObject();
                 //Mesh mesh = GenerateMesh(points);
-                Mesh mesh = points.mesh;
+                Mesh mesh = points.InitializeMesh();
+                Debug.Log(mesh.vertices.Length);
 
                 var meshFilter = gameObject.AddComponent<MeshFilter>();
                 meshFilter.sharedMesh = mesh;
@@ -47,14 +44,22 @@ namespace OpenVDBPointsUnity
 
                 ctx.SetMainObject(gameObject);
             }
-            else if (container == Container.Texture)
+            else if (container == Container.Renderer)
             {
-                Texture2D tex = GenerateTexture(points);
-                ctx.AddObjectToAsset("tex", tex);
+                GameObject gameObject = new GameObject();
+                OpenVDBPointsRenderer renderer = gameObject.AddComponent<OpenVDBPointsRenderer>();
+                renderer.points = points;
+                Debug.Log(renderer.points);
+
+                ctx.AddObjectToAsset("prefab", gameObject);
+                ctx.AddObjectToAsset("points", points);
+                ctx.SetMainObject(gameObject);
+
+                Debug.Log(renderer.points);
             }
         }
 
-        public Mesh GenerateMesh(OpenVDBPoints points) 
+        /* public Mesh GenerateMesh(OpenVDBPoints points) 
         {
             Mesh mesh = new Mesh();
             mesh.indexFormat = points.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
@@ -156,6 +161,6 @@ namespace OpenVDBPointsUnity
 
             OpenVDBPoints points = new OpenVDBPoints();
             points.Load(vertices, colors);
-        }
+        } */
     }
 }
