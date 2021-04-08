@@ -16,9 +16,9 @@ namespace OpenVDBPointsUnity
     public sealed class OpenVDBPoints : ScriptableObject
     {
         #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-        private const string libraryName = "libopenvdb-points-unity";
+        [SerializeField] private const string libraryName = "libopenvdb-points-unity";
         #else 
-        private const string libraryName = "openvdb-points-unity";
+        [SerializeField] private const string libraryName = "openvdb-points-unity";
         #endif
 
         /// <summary>The absolute path to the .vdb file on disk.</summary>
@@ -27,12 +27,12 @@ namespace OpenVDBPointsUnity
         public string Name { get; private set; }
         /// <summary>The default grid name used to access the PointDataGrid.</summary>
         // private const string gridName = "";
-        private const string gridName = "Points";
+        [SerializeField] private string gridName = "Points";
         /// <summary>Pointer to native SharedPointDataGrid.</summary>
-        private IntPtr gridRef; 
+        [SerializeField] private IntPtr gridRef; 
 
-        private uint count = 0;
-        private bool countCalculated = false;
+        [SerializeField] private uint count = 0;
+        [SerializeField] private bool countCalculated = false;
         public uint Count
         {
             get
@@ -44,10 +44,6 @@ namespace OpenVDBPointsUnity
                 return count;
             }
         }
-        private uint visibleCount = 0;  // Visible vertices for frustum culling
-        
-        public NativeArray<Vertex> Vertices { get; private set; }
-        // unsafe private void* vertPtr;
 
 
         /// <summary>
@@ -101,52 +97,6 @@ namespace OpenVDBPointsUnity
             gridRef = readPointGridFromFile(FilePath, grid, logger);
         }
 
-        public Mesh InitializeMesh(bool useFrustumCulling = false)
-        {
-            int intCount = (int)Count;  // bad -- should create two arrays and probably meshes for counts > max int
-
-            Vertices = new NativeArray<Vertex>(intCount, Allocator.Temp);
-            unsafe {
-                // vertPtr = Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(Vertices);
-
-                if (useFrustumCulling)
-                {
-                    visibleCount = populateVertices(
-                        gridRef,
-                        Camera.main.worldToCameraMatrix * Camera.main.projectionMatrix, 
-                        //vertPtr,  
-                        Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(Vertices),
-                        LogMessage
-                    );
-                }
-                else
-                {
-                    visibleCount = populateVertices(
-                        gridRef,
-                        Matrix4x4.zero, 
-                        //vertPtr,  
-                        Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(Vertices),
-                        LogMessage
-                    );
-                }
-            }        
-
-            Mesh mesh = new Mesh();
-            mesh.SetVertexBufferParams(intCount, new []{
-                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
-                new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
-            });
-
-            mesh.SetVertexBufferData(Vertices, 0, 0, intCount);
-
-            mesh.SetIndices(
-                Enumerable.Range(0, (int)visibleCount).ToArray(),
-                MeshTopology.Points, 0
-            );
-
-            return mesh;
-        }
-
         /// <summary>
         /// The total number of points contained in a PointDataGrid referenced by <see cref="gridRef"/>.
         /// </summary>
@@ -180,14 +130,27 @@ namespace OpenVDBPointsUnity
             Debug.Log(message);
         }
 
-        public void UpdateCulling()
+        unsafe public uint PopulateVertices(NativeArray<Vertex> verts)
         {
-            unsafe {
-                visibleCount = populateVertices(
+            unsafe
+            {
+                return populateVertices(
                     gridRef,
-                    Camera.main.worldToCameraMatrix * Camera.main.projectionMatrix,  
-                    //vertPtr,
-                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(Vertices),
+                    Matrix4x4.zero,
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
+                    LogMessage
+                );
+            }
+        }
+
+        unsafe public uint PopulateVertices(NativeArray<Vertex> verts, Camera cam)
+        {
+            unsafe 
+            {
+                return populateVertices(
+                    gridRef,
+                    cam.worldToCameraMatrix * cam.projectionMatrix,  
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
                     LogMessage
                 );
             }
