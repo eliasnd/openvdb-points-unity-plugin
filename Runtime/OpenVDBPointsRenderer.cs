@@ -25,44 +25,41 @@ namespace OpenVDBPointsUnity
         private uint visibleCount;
         private Mesh mesh;
 
-        /* public void Init()
+        public void Init()
         {
-            if (points == null || init)
+            /* if (data == null || init)
                 return;
 
-            vertices = new NativeArray<Vertex>((int)points.Count, Allocator.Temp);
+            vertices = new NativeArray<Vertex>((int)data.Count, Allocator.Temp);
 
             if (frustumCulling)
-                visibleCount = points.PopulateVertices(vertices, Camera.main);
+                visibleCount = data.PopulateVertices(vertices, Camera.main);
             else
-                visibleCount = points.PopulateVertices(vertices);
+                visibleCount = data.PopulateVertices(vertices);
 
             mesh = new Mesh();
-            mesh.SetVertexBufferParams((int)points.Count, new[]{
+            mesh.SetVertexBufferParams((int)data.Count, new[]{
                 new VertexAttributeDescriptor(UnityEngine.Rendering.VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
                 new VertexAttributeDescriptor(UnityEngine.Rendering.VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
             });
 
-            mesh.SetVertexBufferData(vertices, 0, 0, (int)points.Count);
+            mesh.SetVertexBufferData(vertices, 0, 0, (int)data.Count);
 
             mesh.SetIndices(
                 Enumerable.Range(0, (int)visibleCount).ToArray(),
                 MeshTopology.Points, 0
             );
 
-            init = true;
+            init = true; */
         }
 
         void OnRenderObject()
         {
-            if (points == null)
-            {
-                Debug.Log("Null");
-                return;
-            }
+            if (!init)
+                Init();
 
             Graphics.DrawMeshNow(mesh, transform.position, transform.rotation);
 
-        } */
+        }
     }
 }

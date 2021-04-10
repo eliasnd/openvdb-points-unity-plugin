@@ -17,23 +17,24 @@ namespace OpenVDBPointsUnity
         public override void OnImportAsset(AssetImportContext ctx)
         {
             GetAbsoluteAssetPath(ctx);
-            OpenVDBPointsData pd = new OpenVDBPointsData(absoluteAssetPath);
 
             GameObject gameObject = new GameObject();
-            OpenVDBPointsRenderer renderer = gameObject.AddComponent<OpenVDBPointsRenderer>();
-            renderer.data = pd;
+            OpenVDBPointsData pd = ImportAsPointsData(absoluteAssetPath);
 
-            // OpenVDBPointsData test = ScriptableObject.CreateInstance<OpenVDBPointsData>();
-            // Debug.Log(test);
+            // OpenVDBPointsRenderer renderer = gameObject.AddComponent<OpenVDBPointsRenderer>();
+            // renderer.data = pd;
 
             ctx.AddObjectToAsset("prefab", gameObject);
             ctx.AddObjectToAsset("data", pd);
             ctx.SetMainObject(gameObject);
+        }
 
-            Debug.Log(renderer.data);
-
-            Debug.Log("Here");
-
+        OpenVDBPointsData ImportAsPointsData(string path)
+        {
+            OpenVDBPointsData pd = ScriptableObject.CreateInstance<OpenVDBPointsData>();
+            pd.Load(path);
+            // pd.FilePath = path;
+            return pd;
         }
     }
 }
