@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
-using UnityEditor.Experimental.AssetImporters;
+using UnityEditor.AssetImporters;
 using System.Linq;
 using System.IO;
 namespace OpenVDBPointsUnity

@@ -5,7 +5,7 @@ using UnityEditor;
 namespace OpenVDBPointsUnity
 {
     [CustomEditor(typeof(VDBImporter))]
-    class VDBImporterInspector
+    class VDBImporterInspector : Editor
     {
 
     }
