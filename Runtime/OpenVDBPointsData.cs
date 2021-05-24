@@ -22,16 +22,20 @@ namespace OpenVDBPointsUnity
             get
             {
                 if (!countCalculated)
-                    if (new IntPtr(gridRef) != IntPtr.Zero) {
-                        count = OpenVDBPointsAPI.GetCount(new IntPtr(gridRef));
+                {
+                    IntPtr gridRef = GridRef();
+                    if (gridRef != IntPtr.Zero) {
+                        count = OpenVDBPointsAPI.GetCount(gridRef);
                         countCalculated = true;
                     }
                     else
                         throw new Exception("A PointDataGrid must be loaded in order to get a point count!");
+                }
                 return count;
                 
             }
         }
+
 
         #endregion
 
@@ -42,11 +46,11 @@ namespace OpenVDBPointsUnity
         // [SerializeField] string gridName = "Points";
         /// <summary>Pointer to native SharedPointDataGrid.</summary>
         // [SerializeField] IntPtr gridRef;
-        #if UNITY_64
+        /* #if UNITY_64
             [SerializeField] long gridRef;
         #else
             [SerializeField] int gridRef;
-        #endif
+        #endif */
 
         [SerializeField] uint count = 0;
         [SerializeField] bool countCalculated = false;
@@ -58,15 +62,21 @@ namespace OpenVDBPointsUnity
             OpenVDBPointsAPI.Initialize();
         } */
 
-        public void Load(string filePath)
+        private IntPtr GridRef()
+        {
+            return OpenVDBPointsDataManager.Get(this.GetInstanceID());
+        }
+
+        public void Init(string filePath)
         {
             FilePath = filePath;
-            #if UNITY_64
+            OpenVDBPointsDataManager.Register(this.GetInstanceID(), filePath);
+            /* #if UNITY_64
                 gridRef = OpenVDBPointsAPI.Load(FilePath).ToInt64();
             #else
                 gridRef = OpenVDBPointsAPI.Load(FilePath).ToInt32();
-            #endif
-            Debug.Log(gridRef);
+            #endif 
+            Debug.Log(gridRef);*/
         }
 
         /* public uint PopulateVertices(NativeArray<Vertex> verts, Camera cam = null)

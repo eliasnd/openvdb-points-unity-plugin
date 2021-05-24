@@ -15,6 +15,7 @@ namespace OpenVDBPointsUnity
     {
         public override void OnImportAsset(AssetImportContext ctx)
         {
+            Debug.Log("Import");
             GetAbsoluteAssetPath(ctx);
 
             GameObject gameObject = new GameObject();
@@ -31,7 +32,7 @@ namespace OpenVDBPointsUnity
         OpenVDBPointsData ImportAsPointsData(string path)
         {
             OpenVDBPointsData pd = ScriptableObject.CreateInstance<OpenVDBPointsData>();
-            pd.Load(path);
+            pd.Init(path);
             // pd.FilePath = path;
             return pd;
         }
