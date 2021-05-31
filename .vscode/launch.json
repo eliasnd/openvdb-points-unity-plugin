@@ -7,7 +7,7 @@
         {
             "name": "Unity Editor",
             "type": "unity",
-            "path": "/Users/work/Desktop/DSL/OpenVDB-Unity/OpenVDB-Dev/Assets/OpenVDBPoints/Library/EditorInstance.json",
+            "path": "/home/eliasnd/DSL/OpenVDBPoints-Dev/Assets/OpenVDBPoints/Library/EditorInstance.json",
             "request": "launch"
         },
         {

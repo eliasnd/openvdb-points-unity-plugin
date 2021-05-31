@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
-using UnityEditor.AssetImporters;
+
 using System.Linq;
 using System.IO;
 
 namespace OpenVDBPointsUnity
 {
-    [ScriptedImporter(1, "ply")]
+    [UnityEditor.AssetImporters.ScriptedImporter(1, "ply")]
     public class PLYConverter : BaseVDBImporter
     {
 
-        public override void OnImportAsset(AssetImportContext ctx)
+        public override void OnImportAsset(UnityEditor.AssetImporters.AssetImportContext ctx)
         {
             try
             {

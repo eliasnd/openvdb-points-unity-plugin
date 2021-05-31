@@ -1,40 +1,64 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEditor.AssetImporters;
-using UnityEditor;
+
+
 using System.Linq;
 using System;
 
 // TODO make an abstract base class that this inherits from
 namespace OpenVDBPointsUnity
 {
-    [ScriptedImporter(1, "vdb")]
+    [UnityEditor.AssetImporters.ScriptedImporter(1, "vdb")]
     public class VDBImporter : BaseVDBImporter
     {
-        public override void OnImportAsset(AssetImportContext ctx)
+
+        public override void OnImportAsset(UnityEditor.AssetImporters.AssetImportContext ctx)
         {
-            Debug.Log("Import");
             GetAbsoluteAssetPath(ctx);
+            OpenVDBPoints points = new OpenVDBPoints(absoluteAssetPath);
+            points.Load();
+            uint count = points.Count;
+            Debug.Log(string.Format("Total Points: {0}", count.ToString()));
 
-            GameObject gameObject = new GameObject();
-            OpenVDBPointsData pd = ImportAsPointsData(absoluteAssetPath);
+            var gameObject = new GameObject();
+            Mesh mesh = GenerateMesh(points);
 
-            // OpenVDBPointsRenderer renderer = gameObject.AddComponent<OpenVDBPointsRenderer>();
-            // renderer.data = pd;
+            
+
+            var meshFilter = gameObject.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = mesh;
+
+            var meshRenderer = gameObject.AddComponent<MeshRenderer>();
+            meshRenderer.sharedMaterial = new Material(Shader.Find("Specular"));;
 
             ctx.AddObjectToAsset("prefab", gameObject);
-            ctx.AddObjectToAsset("data", pd);
-            ctx.SetMainObject(gameObject);
+            if (mesh != null) ctx.AddObjectToAsset("mesh", mesh);
+
+            // ctx.SetMainObject(gameObject);
         }
 
-        OpenVDBPointsData ImportAsPointsData(string path)
+        public Mesh GenerateMesh(OpenVDBPoints points) 
         {
-            OpenVDBPointsData pd = ScriptableObject.CreateInstance<OpenVDBPointsData>();
-            pd.Init(path);
-            // pd.FilePath = path;
-            return pd;
+            Mesh mesh = new Mesh();
+
+            Vector3[] vertices = points.GenerateVertexArray();
+            // Set mesh name to grid name here
+            mesh.SetVertices(vertices);
+
+            Color[] colors = new Color[vertices.Length];
+
+            for (int i = 0; i < vertices.Length; i++)
+                colors[i] = Color.Lerp(Color.red, Color.green, vertices[i].y);
+
+            mesh.SetColors(colors);
+
+            mesh.SetIndices(
+                Enumerable.Range(0, vertices.Length).ToArray(),
+                MeshTopology.Points, 0
+            );
+
+            return mesh;
         }
     }
 }

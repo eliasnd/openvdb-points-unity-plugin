@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
-using UnityEditor.AssetImporters;
+
 using System.Linq;
 using System.IO;
 namespace OpenVDBPointsUnity
 {
-    public abstract class BaseVDBImporter : ScriptedImporter
+    public abstract class BaseVDBImporter : UnityEditor.AssetImporters.ScriptedImporter
     {
         
         protected string absoluteAssetPath;
 
-        protected void GetAbsoluteAssetPath(AssetImportContext ctx)
+        protected void GetAbsoluteAssetPath(UnityEditor.AssetImporters.AssetImportContext ctx)
         {
             // TODO should probably repace with regex
             List<string> folders = Application.dataPath.Split('/').ToList();
