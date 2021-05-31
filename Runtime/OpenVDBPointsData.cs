@@ -13,11 +13,11 @@ namespace OpenVDBPointsUnity
 
         /// <summary>The absolute path to the .vdb file on disk.</summary>
         /// <remarks>Note- must be an absolute path.</remarks>
-        [SerializeField] public string FilePath; // { get; set; }
+        public string FilePath { get; private set; }
         
-        [SerializeField] public string Name; // { get; private set; }
+        public string Name; // { get; private set; }
 
-        [SerializeField] public uint Count
+        public uint Count
         {
             get
             {
@@ -55,6 +55,9 @@ namespace OpenVDBPointsUnity
         [SerializeField] uint count = 0;
         [SerializeField] bool countCalculated = false;
 
+        [SerializeField] bool init = false;
+        public uint visibleCount;
+
         #endregion 
 
         /* public void OnEnable()
@@ -70,31 +73,29 @@ namespace OpenVDBPointsUnity
         public void Init(string filePath)
         {
             FilePath = filePath;
+            Debug.Log("Calling register on id " + this.GetInstanceID() + ", file " + filePath);
             OpenVDBPointsDataManager.Register(this.GetInstanceID(), filePath);
-            /* #if UNITY_64
-                gridRef = OpenVDBPointsAPI.Load(FilePath).ToInt64();
-            #else
-                gridRef = OpenVDBPointsAPI.Load(FilePath).ToInt32();
-            #endif 
-            Debug.Log(gridRef);*/
+            init = true;
         }
 
-        /* public uint PopulateVertices(NativeArray<Vertex> verts, Camera cam = null)
+        public int UpdateVertices(NativeArray<Vertex> verts, Camera cam = null)
         {
-            if (gridRef != IntPtr.Zero) {
-                if (cam == null)
-                    return OpenVDBPointsAPI.PopulateVertices(gridRef, verts);
-                else
-                    return OpenVDBPointsAPI.PopulateVertices(gridRef, verts, cam);
+            if (!init)
+                throw new Exception("A point cloud must be loaded to update vertices");
+
+            if (cam == null) {
+                OpenVDBPointsAPI.PopulateVertices(GridRef(), verts);
+                return (int)Count;
             }
             else
-                throw new Exception("A PointDataGrid must be loaded in order to get a point count!"); 
+                return (int)OpenVDBPointsAPI.PopulateVertices(GridRef(), verts, cam);
         }
 
         public void OnDisable()
         {
-            // if (gridRef != IntPtr.Zero)
-                // OpenVDBPointsAPI.FinalizeGrid(gridRef);
-        } */
+            if (init) 
+                OpenVDBPointsAPI.FinalizeGrid(GridRef()); 
+
+        }
     }
 }

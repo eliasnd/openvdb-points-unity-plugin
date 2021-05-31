@@ -10,7 +10,7 @@ namespace OpenVDBPointsUnity
     {
         // C++ properties
         [SerializeField] bool frustumCulling;
-        [SerializeField] bool voxelize;     // To-do
+        [SerializeField] bool lodAccumulation;
 
         // Visualization properties
         [SerializeField] Color pointColor;
@@ -23,42 +23,43 @@ namespace OpenVDBPointsUnity
         private NativeArray<Vertex> vertices;
         unsafe private void* vertPtr;
         private uint visibleCount;
-        private Mesh mesh;
-
-        public void Init()
-        {
-            /* if (data == null || init)
-                return;
-
-            vertices = new NativeArray<Vertex>((int)data.Count, Allocator.Temp);
-
-            if (frustumCulling)
-                visibleCount = data.PopulateVertices(vertices, Camera.main);
-            else
-                visibleCount = data.PopulateVertices(vertices);
-
-            mesh = new Mesh();
-            mesh.SetVertexBufferParams((int)data.Count, new[]{
-                new VertexAttributeDescriptor(UnityEngine.Rendering.VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
-                new VertexAttributeDescriptor(UnityEngine.Rendering.VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
-            });
-
-            mesh.SetVertexBufferData(vertices, 0, 0, (int)data.Count);
-
-            mesh.SetIndices(
-                Enumerable.Range(0, (int)visibleCount).ToArray(),
-                MeshTopology.Points, 0
-            );
-
-            init = true; */
-        }
+        // private Mesh mesh;
+        ComputeBuffer buffer;
+        Material mat;
 
         void OnRenderObject()
         {
-            if (!init)
-                Init();
+            if (data == null)
+                return;
 
-            Graphics.DrawMeshNow(mesh, transform.position, transform.rotation);
+            if (!init) {
+
+                // Lazy init
+                init = true;
+
+                // Initialize vertex arr and buffer
+                vertices = new NativeArray<Vertex>((int)data.Count, Allocator.Temp);
+                buffer = new ComputeBuffer((int)data.Count, sizeof(float) * 3);
+                buffer.SetData<Vertex>(vertices);
+
+                // Initialize material
+                mat = new Material(Shader.Find("Custom/Point"));
+                mat.hideFlags = HideFlags.DontSave;
+                mat.EnableKeyword("_COMPUTE_BUFFER");
+                mat.SetColor("_Color", new Color(0.5f, 0.5f, 0.5f, 1));
+                mat.SetBuffer("_PointBuffer", buffer);
+
+
+            }
+
+            // Only need to update vertices if using VDB functionality
+            if (frustumCulling || lodAccumulation) 
+                data.UpdateVertices(vertices, Camera.main);
+
+            mat.SetMatrix("_Transform", transform.localToWorldMatrix);
+            Graphics.DrawProceduralNow(MeshTopology.Points, (int)data.visibleCount, 1);
+
+
 
         }
     }

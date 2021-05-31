@@ -7,6 +7,7 @@ Shader "Custom/Point" {
     }
     SubShader
     {
+        Tags{"RenderType"="Opaque"}
         Pass
         {
             CGPROGRAM
@@ -16,36 +17,55 @@ Shader "Custom/Point" {
             
             #include "UnityCG.cginc"
 
-            fixed4 _Color;
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
+            half3 _Color;
             float _PointSize;
+            float4x4 _Transform;
 
-            struct appdata
+            struct vertex {
+                float3 pos;
+                fixed4 col;
+            };
+
+        #if _COMPUTE_BUFFER
+            StructuredBuffer<float3> _PointBuffer;
+        #endif
+
+            struct attributes
             {
                 float4 pos : POSITION;
-                float2 uv: TEXCOORD0;
                 fixed4 col: COLOR;
             };
 
-            struct v2f {
+            struct varyings {
                 float4 pos : SV_POSITION;
-                float2 uv : TEXCOORD0;
                 half psize : PSIZE;
                 fixed4 col: COLOR;
             };
 
-            v2f vert (appdata v)
+
+        #if _COMPUTE_BUFFER   
+            varyings vert(uint vid : SV_VertexID)
+        #else
+            varyings vert(attributes input)
+        #endif
             {
-                v2f o;
-                o.pos = UnityObjectToClipPos(v.pos);
-                o.uv = TRANSFORM_TEX (v.uv, _MainTex);
+            #if _COMPUTE_BUFFER
+                float3 pt = _PointBuffer[vid];
+                float4 pos = mul(_Transform, float4(pt, 1));
+                // float4 pos = float4(pt, 1);
+            #else
+                float4 pos = input.pos;
+            #endif
+                fixed4 col = input.col;
+
+                varyings o;
+                o.pos = UnityObjectToClipPos(pos);
+                o.col = col;
                 o.psize = _PointSize;
-                o.col = v.col;
                 return o;
             }
-
-            fixed4 frag (v2f i) : SV_Target
+                
+            fixed4 frag (varyings i) : SV_Target
             {
                 return i.col;
             }
