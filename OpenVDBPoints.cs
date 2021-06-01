@@ -164,25 +164,35 @@ namespace OpenVDBPointsUnity
             public double x;
             public double y;
             public double z;
+
+            public float r;
+            public float g;
+            public float b;
         
             // for debugging
             public override String ToString()
             {
-                return "{" + x + ","+ y + "," + z + "}";
+                return "{ Position: " + x + ","+ y + "," + z + "; Color: " + r + ", " + g + ", " + b + "}";
             }
 
             public Vector3 ToVec3()
             {
                 return new Vector3((float)x, (float)y, (float)z);
             }
+
+            public Color ToColor()
+            {
+                return new Color(r, g, b);
+            }
         }
 
         /// <summary> Converts a VDB grid to an array of Vector3 for mesh construction </summary>
-        public Vector3[] GenerateVertexArray()
+        public (Vector3[], Color[]) GenerateArrays()
         {
             if (gridRef != IntPtr.Zero)
             {
-                return IntPtrToArr<Point>(generatePointArrayFromPointGrid(gridRef, LogMessage), Count).Select(pt => pt.ToVec3()).ToArray();
+                Point[] ptrArr = IntPtrToArr<Point>(generatePointArrayFromPointGrid(gridRef, LogMessage), Count);
+                return (ptrArr.Select(pt => pt.ToVec3()).ToArray(), ptrArr.Select(pt => pt.ToColor()).ToArray());
             }
             else
             {
@@ -208,7 +218,7 @@ namespace OpenVDBPointsUnity
                     result[i] = (T)Marshal.PtrToStructure(new IntPtr(arrPtr.ToInt64() + offset), typeof(T));
                 }
                 offset += tSize;
-                Debug.Log(result[i]);
+                // Debug.Log(result[i]);
             }
 
             Marshal.FreeCoTaskMem(arrPtr);

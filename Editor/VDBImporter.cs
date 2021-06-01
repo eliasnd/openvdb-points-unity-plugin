@@ -1,6 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEditor;
+#if UNITY_2020_2_OR_NEWER
+using UnityEditor.AssetImporters;
+#else
+using UnityEditor.Experimental.AssetImporters;
+#endif
 
 
 using System.Linq;
@@ -9,11 +16,11 @@ using System;
 // TODO make an abstract base class that this inherits from
 namespace OpenVDBPointsUnity
 {
-    [UnityEditor.AssetImporters.ScriptedImporter(1, "vdb")]
+    [ScriptedImporter(1, "vdb")]
     public class VDBImporter : BaseVDBImporter
     {
 
-        public override void OnImportAsset(UnityEditor.AssetImporters.AssetImportContext ctx)
+        public override void OnImportAsset(AssetImportContext ctx)
         {
             GetAbsoluteAssetPath(ctx);
             OpenVDBPoints points = new OpenVDBPoints(absoluteAssetPath);
@@ -24,13 +31,11 @@ namespace OpenVDBPointsUnity
             var gameObject = new GameObject();
             Mesh mesh = GenerateMesh(points);
 
-            
-
             var meshFilter = gameObject.AddComponent<MeshFilter>();
             meshFilter.sharedMesh = mesh;
 
             var meshRenderer = gameObject.AddComponent<MeshRenderer>();
-            meshRenderer.sharedMaterial = new Material(Shader.Find("Specular"));;
+            meshRenderer.material = AssetDatabase.LoadAssetAtPath<Material>("Assets/OpenVDBPoints/Editor/Materials/DefaultPoint.mat"); // new Material(Shader.Find("Custom/Point"));;
 
             ctx.AddObjectToAsset("prefab", gameObject);
             if (mesh != null) ctx.AddObjectToAsset("mesh", mesh);
@@ -41,16 +46,12 @@ namespace OpenVDBPointsUnity
         public Mesh GenerateMesh(OpenVDBPoints points) 
         {
             Mesh mesh = new Mesh();
+            mesh.indexFormat = points.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
 
-            Vector3[] vertices = points.GenerateVertexArray();
-            // Set mesh name to grid name here
+            (Vector3[] verts, Color[] cols) arrs = points.GenerateArrays();
+            Vector3[] vertices = arrs.verts;
             mesh.SetVertices(vertices);
-
-            Color[] colors = new Color[vertices.Length];
-
-            for (int i = 0; i < vertices.Length; i++)
-                colors[i] = Color.Lerp(Color.red, Color.green, vertices[i].y);
-
+            Color[] colors = arrs.cols;
             mesh.SetColors(colors);
 
             mesh.SetIndices(
