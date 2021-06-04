@@ -48,10 +48,10 @@ namespace OpenVDBPointsUnity
             Mesh mesh = new Mesh();
             mesh.indexFormat = points.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
 
-            (Vector3[] verts, Color[] cols) arrs = points.GenerateArrays();
+            (Vector3[] verts, Color32[] cols) arrs = points.GenerateArrays();
             Vector3[] vertices = arrs.verts;
             mesh.SetVertices(vertices);
-            Color[] colors = arrs.cols;
+            Color32[] colors = arrs.cols;
             mesh.SetColors(colors);
 
             mesh.SetIndices(

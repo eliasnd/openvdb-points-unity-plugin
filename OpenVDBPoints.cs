@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Collections;
 using System.Runtime.InteropServices;
 using System;
 using System.IO;
@@ -101,6 +102,9 @@ namespace OpenVDBPointsUnity
         [DllImport(libraryName)]
         private static extern IntPtr generatePointArrayFromPointGrid(IntPtr gridRef, LoggingCallback cb);
 
+        [DllImport(libraryName)]
+        private static extern void populatePointArraysFromPointGrid(IntPtr posArr, IntPtr colArr, IntPtr gridRef, LoggingCallback cb);
+
         /// <summary>Initializes OpenVDB.</summary>
         private void Initialize()
         {
@@ -187,12 +191,23 @@ namespace OpenVDBPointsUnity
         }
 
         /// <summary> Converts a VDB grid to an array of Vector3 for mesh construction </summary>
-        public (Vector3[], Color[]) GenerateArrays()
+        public (Vector3[], Color32[]) GenerateArrays()
         {
             if (gridRef != IntPtr.Zero)
             {
-                Point[] ptrArr = IntPtrToArr<Point>(generatePointArrayFromPointGrid(gridRef, LogMessage), Count);
-                return (ptrArr.Select(pt => pt.ToVec3()).ToArray(), ptrArr.Select(pt => pt.ToColor()).ToArray());
+                // Point[] ptArr = IntPtrToArr<Point>(generatePointArrayFromPointGrid(gridRef, LogMessage), Count);
+                NativeArray<Vector3> posArr = new NativeArray<Vector3>((int)Count, Allocator.Temp);
+                NativeArray<Color32> colArr = new NativeArray<Color32>((int)Count, Allocator.Temp);
+                unsafe {
+                    populatePointArraysFromPointGrid(
+                        (IntPtr)Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(posArr),
+                        (IntPtr)Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(colArr),
+                        gridRef, LogMessage
+                    );
+                }
+
+                return (posArr.ToArray(), colArr.ToArray());
+                // return (ptArr.Select(pt => pt.ToVec3()).ToArray(), ptArr.Select(pt => pt.ToColor()).ToArray());
             }
             else
             {
