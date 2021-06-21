@@ -25,7 +25,7 @@ Shader "Custom/Point" {
             struct Varyings
             {
                 float4 position : SV_Position;
-                half3 color : COLOR;
+                float4 color : COLOR;
                 half psize : PSIZE;
             };
 

@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using UnityEngine;
+using UnityEditor;
 using Unity.Collections;
+using UnityEditor.AssetImporters;
 using UnityEngine.Rendering;
 
 namespace OpenVDBPointsUnity 
@@ -19,50 +21,50 @@ namespace OpenVDBPointsUnity
 
         // [HideInInspector]
         public OpenVDBPointsData data;
+        [SerializeField] bool init;
 
-        private bool init = false;
-        private NativeArray<Vertex> vertices;
-        unsafe private void* vertPtr;
         private uint visibleCount;
-        // private Mesh mesh;
-        ComputeBuffer buffer;
+        private Mesh mesh;
         Material mat;
 
-        void OnRenderObject()
+        public void Init()
         {
-            if (data == null)
-                return;
+            Mesh mesh = new Mesh();
 
-            if (!init) {
+            mesh.indexFormat = data.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16;
 
-                // Lazy init
-                init = true;
+            VertexAttributeDescriptor[] layout = new[] {
+                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+                new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UInt8, 4)
+            };
 
-                // Initialize vertex arr and buffer
-                vertices = new NativeArray<Vertex>((int)data.Count, Allocator.Temp);
-                buffer = new ComputeBuffer((int)data.Count, System.Runtime.InteropServices.Marshal.SizeOf(new Vertex()));
-                buffer.SetData<Vertex>(vertices);
+            mesh.SetVertexBufferParams((int)data.Count, layout);
+            mesh.SetVertexBufferData(data.GetVertices(), 0, 0, (int)data.Count);
 
-                // Initialize material
-                mat = new Material(Shader.Find("Custom/PointBuffer"));
-                mat.hideFlags = HideFlags.DontSave;
-                mat.SetColor("_Color", new Color(0.5f, 0.5f, 0.5f, 1));
-                mat.SetBuffer("_Buffer", buffer);
+            mesh.SetIndices(
+                Enumerable.Range(0, (int)data.Count).ToArray(),
+                MeshTopology.Points, 0
+            );
 
+            MeshFilter filter = gameObject.GetComponent<MeshFilter>();
+            if (filter == null)
+                filter = gameObject.AddComponent<MeshFilter>();
 
-            }
+            filter.mesh = mesh;
 
-            // Only need to update vertices if using VDB functionality
-            if (frustumCulling || lodAccumulation) 
-                data.UpdateVertices(vertices, Camera.main);
+            MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+            if (renderer == null)
+                renderer = gameObject.AddComponent<MeshRenderer>();
 
-            mat.SetPass(0);
-            mat.SetMatrix("_Transform", transform.localToWorldMatrix);
-            // Graphics.DrawProcedural(mat, MeshTopology.Points, (int)data.visibleCount, 1);
-            Graphics.DrawProceduralNow(MeshTopology.Points, (int)buffer.count, 1);
+            renderer.material = AssetDatabase.LoadAssetAtPath<Material>("Assets/OpenVDBPoints/Editor/Materials/DefaultPoint.mat");
 
+            init = true;
+        }
 
-
+        void Update()
+        {
+            if (data != null && !init)
+                Init();
         }
     }
 }

@@ -61,6 +61,12 @@ namespace OpenVDBPointsUnity
 
         #endregion 
 
+        #region unserialized
+
+        NativeArray<Vertex> verts;
+
+        #endregion
+
         /* public void OnEnable()
         {
             OpenVDBPointsAPI.Initialize();
@@ -85,7 +91,21 @@ namespace OpenVDBPointsUnity
             init = true;
         }
 
-        public int UpdateVertices(NativeArray<Vertex> verts, Camera cam = null)
+        public NativeArray<Vertex> GetVertices()
+        {
+            if (!init)
+                throw new Exception("A point cloud must be loaded to update vertices");
+
+            if (verts == null || verts.IsCreated == false)
+            {
+                verts = new NativeArray<Vertex>((int)Count, Allocator.Temp);
+                UpdateVertices();
+            }
+
+            return verts;
+        }
+
+        public int UpdateVertices(Camera cam = null)
         {
             if (!init)
                 throw new Exception("A point cloud must be loaded to update vertices");
