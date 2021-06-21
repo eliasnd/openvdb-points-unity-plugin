@@ -56,7 +56,7 @@ namespace OpenVDBPointsUnity
         [SerializeField] bool countCalculated = false;
 
         [SerializeField] bool init = false;
-        [SerializeField] int id = 0;
+        int id = 0;
         public uint visibleCount;
 
         #endregion 
@@ -86,9 +86,15 @@ namespace OpenVDBPointsUnity
                 throw new Exception("A file path is required to populate point data");
             FilePath = filePath;
             Debug.Log(FilePath);
-            id = this.GetInstanceID();
-            OpenVDBPointsDataManager.Register(id, filePath);
+            // id = this.GetInstanceID();
+            // OpenVDBPointsDataManager.Register(id, filePath);
+            id = OpenVDBPointsDataManager.Register(filePath);
             init = true;
+        }
+
+        public void SetID(int id)
+        {
+            this.id = id;
         }
 
         public NativeArray<Vertex> GetVertices()

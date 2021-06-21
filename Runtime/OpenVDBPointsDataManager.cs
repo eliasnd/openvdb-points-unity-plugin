@@ -14,14 +14,16 @@ namespace OpenVDBPointsUnity
     [InitializeOnLoad]
     class OpenVDBPointsDataManager
     {
-        static Dictionary<int, IntPtr> map;
+        // static Dictionary<int, IntPtr> map;
+        static List<IntPtr> refs;
 
         static OpenVDBPointsDataManager()
         {
             OpenVDBPointsAPI.Initialize();
 
             // Maps object ids to gridPtrs
-            map = new Dictionary<int, IntPtr>();
+            // map = new Dictionary<int, IntPtr>();
+            refs = new List<IntPtr>();
 
             foreach (string guid in AssetDatabase.FindAssets("t:OpenVDBPointsData", new string[] {"Assets"}))
             {
@@ -30,27 +32,36 @@ namespace OpenVDBPointsUnity
                     continue;
                 
                 // Populate map with existing OpenVDBPointsData objects
-                Debug.Log($"{asset.GetInstanceID()}: {asset.FilePath}");
-                map.Add(asset.GetInstanceID(), OpenVDBPointsAPI.Load(asset.FilePath));
+                // Debug.Log($"{asset.GetInstanceID()}: {asset.FilePath}");
+                // map.Add(asset.GetInstanceID(), OpenVDBPointsAPI.Load(asset.FilePath));
+                refs.Add(OpenVDBPointsAPI.Load(asset.FilePath));
+                asset.SetID(refs.Count-1);
             }
         }
 
         // Register new object created during session
-        public static void Register(int id, string filePath)
+        /* public static void Register(int id, string filePath)
         {
             Debug.Log($"Added {id}, {filePath}");
             map.Add(id, OpenVDBPointsAPI.Load(filePath));
+        } */
+
+        public static int Register(string filePath)
+        {
+            refs.Add(OpenVDBPointsAPI.Load(filePath));
+            return refs.Count-1;
         }
 
         // Get gridPtr from object id
         public static IntPtr Get(int id)
         {
             try {
-                return map[id];
+                return refs[id];
             } catch {
                 throw new Exception($"id {id} not registered");
             }
         }
+
         
     }
 }

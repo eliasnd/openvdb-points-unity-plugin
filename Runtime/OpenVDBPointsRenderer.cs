@@ -41,10 +41,10 @@ namespace OpenVDBPointsUnity
             mesh.SetVertexBufferParams((int)data.Count, layout);
             mesh.SetVertexBufferData(data.GetVertices(), 0, 0, (int)data.Count);
 
-            mesh.SetIndices(
+            /* mesh.SetIndices(
                 Enumerable.Range(0, (int)data.Count).ToArray(),
                 MeshTopology.Points, 0
-            );
+            ); */
 
             MeshFilter filter = gameObject.GetComponent<MeshFilter>();
             if (filter == null)
