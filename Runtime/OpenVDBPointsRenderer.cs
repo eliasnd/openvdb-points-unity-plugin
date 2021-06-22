@@ -9,7 +9,12 @@ namespace OpenVDBPointsUnity
     [ExecuteInEditMode]
     public sealed class OpenVDBPointsRenderer : MonoBehaviour 
     {
-        // C++ properties
+        #region public
+        public OpenVDBPointsData data;
+
+        #endregion
+
+        #region serialized
         [SerializeField] bool frustumCulling;
         [SerializeField] bool lodAccumulation;
 
@@ -17,16 +22,23 @@ namespace OpenVDBPointsUnity
         [SerializeField] Color pointColor;
         [SerializeField] float pointSize;
 
-        // [HideInInspector]
-        public OpenVDBPointsData data;
+        #endregion
 
-        private bool init = false;
-        private NativeArray<Vertex> vertices;
-        unsafe private void* vertPtr;
-        private uint visibleCount;
-        // private Mesh mesh;
+        #region unserialized
+        bool init = false;
+
+        NativeArray<Vertex> vertices;
+        // NativeArray<Vector3> vertices;
         ComputeBuffer buffer;
+        uint visibleCount;
+
         Material mat;
+
+        #endregion
+        // C++ properties
+
+        // [HideInInspector]
+
 
         void OnRenderObject()
         {
@@ -40,16 +52,25 @@ namespace OpenVDBPointsUnity
 
                 // Initialize vertex arr and buffer
                 vertices = new NativeArray<Vertex>((int)data.Count, Allocator.Temp);
+                // vertices = new NativeArray<Vector3>((int)data.Count, Allocator.Temp);
+                data.UpdateVertices(vertices);
+                Debug.Log(vertices[0]);
+
                 buffer = new ComputeBuffer((int)data.Count, System.Runtime.InteropServices.Marshal.SizeOf(new Vertex()));
                 buffer.SetData<Vertex>(vertices);
+                // buffer = new ComputeBuffer((int)data.Count, sizeof(float) * 3);
+                // buffer.SetData<Vector3>(vertices);
+                
+                // vertices = new NativeArray<Vector3>((int)data.Count, Allocator.Temp);
+                // pointbuffer = new ComputeBuffer((int)data.Count, sizeof(float) * 3);
+                // pointbuffer.SetData<Vector3>(vertices);
 
                 // Initialize material
+                Debug.Log(Shader.Find("Custom/PointBuffer"));
                 mat = new Material(Shader.Find("Custom/PointBuffer"));
                 mat.hideFlags = HideFlags.DontSave;
                 mat.SetColor("_Color", new Color(0.5f, 0.5f, 0.5f, 1));
                 mat.SetBuffer("_Buffer", buffer);
-
-
             }
 
             // Only need to update vertices if using VDB functionality
@@ -58,11 +79,21 @@ namespace OpenVDBPointsUnity
 
             mat.SetPass(0);
             mat.SetMatrix("_Transform", transform.localToWorldMatrix);
+            if (pointSize != 0)
+                mat.SetFloat("_PointSize", pointSize);
+            // mat.SetBuffer("_Buffer", buffer);
             // Graphics.DrawProcedural(mat, MeshTopology.Points, (int)data.visibleCount, 1);
             Graphics.DrawProceduralNow(MeshTopology.Points, (int)buffer.count, 1);
 
 
 
+        }
+
+        void OnDisable()
+        {
+            if (buffer != null)
+                buffer.Release();
+            init = false;
         }
     }
 }

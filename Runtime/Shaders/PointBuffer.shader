@@ -6,7 +6,7 @@ Shader "Custom/PointBuffer" {
     }
     Subshader
     {
-        Tags { "RenderType"="Opaque" };
+        Tags { "RenderType"="Opaque" }
         Pass
         {
             CGPROGRAM
@@ -19,7 +19,14 @@ Shader "Custom/PointBuffer" {
             half3 _Color;
             float _PointSize;
             float4x4 _Transform;
-            StructuredBuffer<float3> _Buffer;
+
+            struct Point {
+                float3 pos;
+                half4 col;
+            };
+
+            StructuredBuffer<Point> _Buffer;
+            // StructuredBuffer<float3> _Buffer;
 
             /* struct Vertex {
                 float3 pos;
@@ -31,26 +38,28 @@ Shader "Custom/PointBuffer" {
                 fixed4 col : COLOR;
             }; */
 
-            struct Varyings {
+            struct v2f {
                 float4 pos : SV_POSITION;
                 half psize : PSIZE;
-                half3 col : COLOR;
+                half4 col : COLOR;
             };
 
-            Varyings vert(uint vid : SV_VertexID) {
-                float3 pt = _Buffer[vid];
-                float4 pos = mul(_Transform, float4(pt, 1));
-                half3 col = _Color;
+            v2f vert(uint vid : SV_VertexID) {
 
-                Varyings o;
-                o.pos = UnityObjectToClipPos(pos);
-                o.col = col;
+                v2f o;
+
+                // float4 pos = mul(_Transform, float4(_Buffer[vid], 1));
+                // float4 pos = float4(0,0,0,1);
+                // o.pos = UnityObjectToClipPos(pos);
+                o.pos = UnityObjectToClipPos(mul(_Transform, float4(_Buffer[vid].pos, 1)));
+                // o.col = _Color;
+                o.col = _Buffer[vid].col;
                 o.psize = _PointSize;
                 return o;
             }
 
-            half4 frag(Varyings i) : SV_Target {
-                return half4(i.col, 1);
+            half4 frag(v2f i) : SV_Target {
+                return i.col;
             }
 
             ENDCG

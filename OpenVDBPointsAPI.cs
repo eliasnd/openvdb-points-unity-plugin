@@ -85,6 +85,32 @@ namespace OpenVDBPointsUnity
             }
         }
 
+        /* unsafe public static uint PopulateVertices(IntPtr gridRef, NativeArray<Vector3> verts)
+        {
+            unsafe
+            {
+                return populateVertices(
+                    gridRef,
+                    Matrix4x4.zero,
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
+                    LogMessage
+                );
+            }
+        }
+
+        // Frustum culling
+        unsafe public static uint PopulateVertices(IntPtr gridRef, NativeArray<Vector3> verts, Camera cam)
+        {
+            unsafe
+            {
+                return populateVertices(
+                    gridRef,
+                    cam.worldToCameraMatrix * cam.projectionMatrix,
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
+                    LogMessage
+                );
+            }
+        }*/
         public static void FinalizeGrid(IntPtr gridRef)
         {
             destroySharedPointDataGridReference(gridRef);

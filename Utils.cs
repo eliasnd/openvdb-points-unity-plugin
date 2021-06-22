@@ -8,6 +8,6 @@ namespace OpenVDBPointsUnity
     public struct Vertex
     {
         public Vector3 pos;
-        public Color32 color;
+        public Color col;
     }
 }

@@ -18,11 +18,11 @@ namespace OpenVDBPointsUnity
             Debug.Log("Import");
             GetAbsoluteAssetPath(ctx);
 
-            GameObject gameObject = new GameObject();
             OpenVDBPointsData pd = ImportAsPointsData(absoluteAssetPath);
 
-            // OpenVDBPointsRenderer renderer = gameObject.AddComponent<OpenVDBPointsRenderer>();
-            // renderer.data = pd;
+            GameObject gameObject = new GameObject();
+            OpenVDBPointsRenderer renderer = gameObject.AddComponent<OpenVDBPointsRenderer>();
+            renderer.data = pd;
 
             ctx.AddObjectToAsset("prefab", gameObject);
             ctx.AddObjectToAsset("data", pd);

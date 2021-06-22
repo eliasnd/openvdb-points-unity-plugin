@@ -80,12 +80,19 @@ namespace OpenVDBPointsUnity
                 throw new Exception("A file path is required to populate point data");
             FilePath = filePath;
             Debug.Log(FilePath);
-            id = this.GetInstanceID();
-            OpenVDBPointsDataManager.Register(id, filePath);
+            // id = this.GetInstanceID();
+            // OpenVDBPointsDataManager.Register(id, filePath);
+            id = OpenVDBPointsDataManager.Register(filePath);
             init = true;
         }
 
+        public void SetID(int id)
+        {
+            this.id = id;
+        }
+
         public int UpdateVertices(NativeArray<Vertex> verts, Camera cam = null)
+        // public int UpdateVertices(NativeArray<Vector3> verts, Camera cam = null)
         {
             if (!init)
                 throw new Exception("A point cloud must be loaded to update vertices");
