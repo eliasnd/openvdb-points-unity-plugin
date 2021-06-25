@@ -65,6 +65,8 @@ namespace OpenVDBPointsUnity
                 return populateVertices(
                     gridRef,
                     Matrix4x4.zero,
+                    false,
+                    false,
                     Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
                     LogMessage
                 );
@@ -78,7 +80,9 @@ namespace OpenVDBPointsUnity
             {
                 return populateVertices(
                     gridRef,
-                    cam.worldToCameraMatrix * cam.projectionMatrix,
+                    cam.projectionMatrix * cam.worldToCameraMatrix,
+                    true,
+                    false,
                     Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
                     LogMessage
                 );
@@ -171,7 +175,7 @@ namespace OpenVDBPointsUnity
         private static extern IntPtr arraysToPointGrid(IntPtr positionArr, IntPtr colorArr, int count);
 
         [DllImport(libraryName)]
-        unsafe private static extern uint populateVertices(IntPtr gridRef, Matrix4x4 cameraMat, void* verts, LoggingCallback cb);
+        unsafe private static extern uint populateVertices(IntPtr gridRef, Matrix4x4 cameraMat, bool frustumCulling, bool lod, void* verts, LoggingCallback cb);
 
         #endregion
     }

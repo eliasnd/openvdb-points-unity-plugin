@@ -55,11 +55,15 @@ namespace OpenVDBPointsUnity
         [SerializeField] uint count = 0;
         [SerializeField] bool countCalculated = false;
 
-        [SerializeField] bool init = false;
-        [SerializeField] int id = 0;
         public uint visibleCount;
 
         #endregion 
+
+        #region unserialized
+        [SerializeField] bool init = false;
+        [SerializeField] int id = -1;
+
+        #endregion
 
         /* public void OnEnable()
         {
@@ -111,6 +115,8 @@ namespace OpenVDBPointsUnity
                 OpenVDBPointsAPI.FinalizeGrid(GridRef()); 
                 // OpenVDBPointsDataManager.Deregister(this.GetInstanceID());
             }
+
+            // init = false;
 
         }
     }

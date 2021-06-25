@@ -19,14 +19,16 @@ namespace OpenVDBPointsUnity
 
         static OpenVDBPointsDataManager()
         {
+            // Debug.Log("Manager");
             OpenVDBPointsAPI.Initialize();
 
             // Maps object ids to gridPtrs
             // map = new Dictionary<int, IntPtr>();
             refs = new List<IntPtr>();
 
-            foreach (string guid in AssetDatabase.FindAssets("t:OpenVDBPointsData", new string[] {"Assets"}))
+            foreach (string guid in AssetDatabase.FindAssets("t:OpenVDBPointsData"))
             {
+                // Debug.Log("Asset");
                 OpenVDBPointsData asset = AssetDatabase.LoadAssetAtPath<OpenVDBPointsData>(AssetDatabase.GUIDToAssetPath(guid));
                 if (asset.FilePath == null || asset.FilePath == "")
                     continue;
@@ -34,8 +36,7 @@ namespace OpenVDBPointsUnity
                 // Populate map with existing OpenVDBPointsData objects
                 // Debug.Log($"{asset.GetInstanceID()}: {asset.FilePath}");
                 // map.Add(asset.GetInstanceID(), OpenVDBPointsAPI.Load(asset.FilePath));
-                refs.Add(OpenVDBPointsAPI.Load(asset.FilePath));
-                asset.SetID(refs.Count-1);
+                asset.SetID(Register(asset.FilePath));
             }
         }
 
@@ -49,6 +50,7 @@ namespace OpenVDBPointsUnity
         public static int Register(string filePath)
         {
             refs.Add(OpenVDBPointsAPI.Load(filePath));
+            // Debug.Log("Now refs has count " + refs.Count);
             return refs.Count-1;
         }
 

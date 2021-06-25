@@ -20,13 +20,14 @@ namespace OpenVDBPointsUnity
 
             OpenVDBPointsData pd = ImportAsPointsData(absoluteAssetPath);
 
-            GameObject gameObject = new GameObject();
-            OpenVDBPointsRenderer renderer = gameObject.AddComponent<OpenVDBPointsRenderer>();
-            renderer.data = pd;
+            // GameObject gameObject = new GameObject();
+            // OpenVDBPointsRenderer renderer = gameObject.AddComponent<OpenVDBPointsRenderer>();
+            // renderer.data = pd;
 
-            ctx.AddObjectToAsset("prefab", gameObject);
+            // ctx.AddObjectToAsset("prefab", gameObject);
             ctx.AddObjectToAsset("data", pd);
-            ctx.SetMainObject(gameObject);
+            // ctx.SetMainObject(gameObject);
+            ctx.SetMainObject(pd);
         }
 
         OpenVDBPointsData ImportAsPointsData(string path)

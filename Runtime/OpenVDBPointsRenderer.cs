@@ -25,6 +25,7 @@ namespace OpenVDBPointsUnity
         #endregion
 
         #region unserialized
+        OpenVDBPointsData oldData;
         bool init = false;
 
         NativeArray<Vertex> vertices;
@@ -45,13 +46,15 @@ namespace OpenVDBPointsUnity
             if (data == null)
                 return;
 
-            if (!init) {
+            if (!init || oldData != data) {
 
                 // Lazy init
                 init = true;
 
                 // Initialize vertex arr and buffer
-                vertices = new NativeArray<Vertex>((int)data.Count, Allocator.Temp);
+                if (vertices.IsCreated)
+                    vertices.Dispose();
+                vertices = new NativeArray<Vertex>((int)data.Count, Allocator.Persistent);
                 // vertices = new NativeArray<Vector3>((int)data.Count, Allocator.Temp);
                 data.UpdateVertices(vertices);
                 Debug.Log(vertices[0]);
@@ -75,7 +78,7 @@ namespace OpenVDBPointsUnity
 
             // Only need to update vertices if using VDB functionality
             if (frustumCulling || lodAccumulation) 
-                data.UpdateVertices(vertices, Camera.main);
+                data.UpdateVertices(vertices, Camera.current);
 
             mat.SetPass(0);
             mat.SetMatrix("_Transform", transform.localToWorldMatrix);
@@ -86,13 +89,16 @@ namespace OpenVDBPointsUnity
             Graphics.DrawProceduralNow(MeshTopology.Points, (int)buffer.count, 1);
 
 
-
+            oldData = data;
         }
 
         void OnDisable()
         {
+            Debug.Log("Disable");
             if (buffer != null)
                 buffer.Release();
+            if (vertices.IsCreated)
+                vertices.Dispose();
             init = false;
         }
     }
