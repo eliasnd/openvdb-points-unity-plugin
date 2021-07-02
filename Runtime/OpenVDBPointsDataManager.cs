@@ -14,8 +14,10 @@ namespace OpenVDBPointsUnity
     [InitializeOnLoad]
     class OpenVDBPointsDataManager
     {
-        // static Dictionary<int, IntPtr> map;
-        static List<IntPtr> refs;
+        static Dictionary<int, IntPtr> map;
+        static int nextID;
+        // static List<IntPtr> refs;
+        // static List<int> available;
 
         static OpenVDBPointsDataManager()
         {
@@ -23,8 +25,9 @@ namespace OpenVDBPointsUnity
             OpenVDBPointsAPI.Initialize();
 
             // Maps object ids to gridPtrs
-            // map = new Dictionary<int, IntPtr>();
-            refs = new List<IntPtr>();
+            map = new Dictionary<int, IntPtr>();
+            nextID = 0;
+            // refs = new List<IntPtr>();
 
             foreach (string guid in AssetDatabase.FindAssets("t:OpenVDBPointsData"))
             {
@@ -49,21 +52,29 @@ namespace OpenVDBPointsUnity
 
         public static int Register(string filePath)
         {
-            refs.Add(OpenVDBPointsAPI.Load(filePath));
+            // refs.Add(OpenVDBPointsAPI.Load(filePath));
             // Debug.Log("Now refs has count " + refs.Count);
-            return refs.Count-1;
+            map.Add(nextID, OpenVDBPointsAPI.Load(filePath));
+            nextID++;
+            string msg = $"Added {nextID-1}: {map[nextID-1]}";
+            return nextID-1;
         }
 
         // Get gridPtr from object id
         public static IntPtr Get(int id)
         {
             try {
-                return refs[id];
+                // return refs[id];
+                return map[id];
             } catch {
                 throw new Exception($"id {id} not registered");
             }
         }
 
+        public static bool Deregister(int id)
+        {
+            return map.Remove(id);
+        }
         
     }
 }

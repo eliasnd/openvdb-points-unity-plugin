@@ -55,7 +55,7 @@ namespace OpenVDBPointsUnity
         [SerializeField] uint count = 0;
         [SerializeField] bool countCalculated = false;
 
-        public uint visibleCount;
+        // public uint visibleCount;
 
         #endregion 
 
@@ -70,7 +70,7 @@ namespace OpenVDBPointsUnity
             OpenVDBPointsAPI.Initialize();
         } */
 
-        private IntPtr GridRef()
+        public IntPtr GridRef()
         {
             if (!init)
                 throw new Exception("A point cloud must be loaded to get a grid ref");
@@ -95,7 +95,7 @@ namespace OpenVDBPointsUnity
             this.id = id;
         }
 
-        public int UpdateVertices(NativeArray<Vertex> verts, Camera cam = null)
+        /* public int UpdateVertices(NativeArray<Vertex> verts, Camera cam = null)
         // public int UpdateVertices(NativeArray<Vector3> verts, Camera cam = null)
         {
             if (!init)
@@ -107,13 +107,13 @@ namespace OpenVDBPointsUnity
             }
             else
                 return (int)OpenVDBPointsAPI.PopulateVertices(GridRef(), verts, cam);
-        }
+        } */
 
         public void OnDisable()
         {
             if (init) {
                 OpenVDBPointsAPI.FinalizeGrid(GridRef()); 
-                // OpenVDBPointsDataManager.Deregister(this.GetInstanceID());
+                OpenVDBPointsDataManager.Deregister(this.id);
             }
 
             // init = false;
