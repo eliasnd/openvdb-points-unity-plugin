@@ -95,7 +95,14 @@ namespace OpenVDBPointsUnity
             this.id = id;
         }
 
-        public int UpdateVertices(NativeArray<Vertex> verts, Camera cam = null)
+        public void PopulateVertices(NativeArray<Vertex> verts)
+        {
+            if (!init)
+                throw new Exception("A point cloud must be loaded to update vertices");
+
+            OpenVDBPointsAPI.PopulateVertices(GridRef(), verts);
+        }
+        /* public int UpdateVertices(NativeArray<Vertex> verts, Camera cam = null)
         // public int UpdateVertices(NativeArray<Vector3> verts, Camera cam = null)
         {
             if (!init)
@@ -107,7 +114,7 @@ namespace OpenVDBPointsUnity
             }
             else
                 return (int)OpenVDBPointsAPI.PopulateVertices(GridRef(), verts, cam);
-        }
+        } */
 
         public void OnDisable()
         {

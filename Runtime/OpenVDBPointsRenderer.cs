@@ -56,7 +56,7 @@ namespace OpenVDBPointsUnity
                     vertices.Dispose();
                 vertices = new NativeArray<Vertex>((int)data.Count, Allocator.Persistent);
                 // vertices = new NativeArray<Vector3>((int)data.Count, Allocator.Temp);
-                data.UpdateVertices(vertices);
+                data.PopulateVertices(vertices);
                 Debug.Log(vertices[0]);
 
                 buffer = new ComputeBuffer((int)data.Count, System.Runtime.InteropServices.Marshal.SizeOf(new Vertex()));
@@ -77,8 +77,8 @@ namespace OpenVDBPointsUnity
             }
 
             // Only need to update vertices if using VDB functionality
-            if (frustumCulling || lodAccumulation) 
-                data.UpdateVertices(vertices, Camera.current);
+            // if (frustumCulling || lodAccumulation) 
+                // data.UpdateVertices(vertices, Camera.current);
 
             mat.SetPass(0);
             mat.SetMatrix("_Transform", transform.localToWorldMatrix);

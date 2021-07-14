@@ -37,7 +37,7 @@ namespace OpenVDBPointsUnity
             }
             string grid = name == null ? gridName : name;
             LoggingCallback logger = cb == null ? LogMessage : cb;
-            return readPointGridFromFile(filePath, grid, logger);
+            return readPointDataFromFile(filePath, grid, logger);
         }
 
         /// <summary> Converts an unordered point cloud from a .ply file to VDB format. </summary>
@@ -58,66 +58,17 @@ namespace OpenVDBPointsUnity
             return getPointCountFromGrid(gridRef);
         }
 
-        unsafe public static uint PopulateVertices(IntPtr gridRef, NativeArray<Vertex> verts)
+        unsafe public static int PopulateVertices(IntPtr gridRef, NativeArray<Vertex> verts)
         {
             unsafe
             {
-                return populateVertices(
-                    gridRef,
-                    Matrix4x4.zero,
-                    false,
-                    false,
-                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
-                    LogMessage
-                );
+                return populatePoints(gridRef, Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts));
             }
         }
 
-        // Frustum culling
-        unsafe public static uint PopulateVertices(IntPtr gridRef, NativeArray<Vertex> verts, Camera cam)
-        {
-            unsafe
-            {
-                return populateVertices(
-                    gridRef,
-                    cam.projectionMatrix * cam.worldToCameraMatrix,
-                    true,
-                    false,
-                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
-                    LogMessage
-                );
-            }
-        }
-
-        /* unsafe public static uint PopulateVertices(IntPtr gridRef, NativeArray<Vector3> verts)
-        {
-            unsafe
-            {
-                return populateVertices(
-                    gridRef,
-                    Matrix4x4.zero,
-                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
-                    LogMessage
-                );
-            }
-        }
-
-        // Frustum culling
-        unsafe public static uint PopulateVertices(IntPtr gridRef, NativeArray<Vector3> verts, Camera cam)
-        {
-            unsafe
-            {
-                return populateVertices(
-                    gridRef,
-                    cam.worldToCameraMatrix * cam.projectionMatrix,
-                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts),
-                    LogMessage
-                );
-            }
-        }*/
         public static void FinalizeGrid(IntPtr gridRef)
         {
-            destroySharedPointDataGridReference(gridRef);
+            destroyPointData(gridRef);
         }
 
         /// <summary> Default <see cref="LoggingCallback">callback</see> for logging native messages. </summary> 
@@ -144,7 +95,7 @@ namespace OpenVDBPointsUnity
         /// <param name="cb">The <see cref="LoggingCallback">callback</see> for logging native messages.</param>
         /// <returns>A pointer to the SharedPointDataGridReference on the native side. </returns>
         [DllImport(libraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr readPointGridFromFile(string filename, string gridName, LoggingCallback cb);
+        private static extern IntPtr readPointDataFromFile(string filename, string gridName, LoggingCallback cb);
         /// <summary>The total number of points in a PointDataGrid.</summary>
         /// <param name="gridRef">Pointer to the SharedPointDataGridReference on the native side.</summary>
         /// <returns>The total number of points in the grid.</returns>
@@ -155,7 +106,7 @@ namespace OpenVDBPointsUnity
         /// </summary>
         /// <param name="gridRef">Pointer to the SharedPointDataGridReference on the native side.</summary>
         [DllImport(libraryName)]
-        private static extern void destroySharedPointDataGridReference(IntPtr gridRef);
+        private static extern void destroyPointData(IntPtr gridRef);
         /// <summary> Converts an unordered point cloud from a .ply file to VDB format. </summary>
         /// <param name="filename">The absolute path to the .ply file. </param>
         /// <param name="outfile">The absolute path to the .vdb file. </param>
@@ -166,16 +117,7 @@ namespace OpenVDBPointsUnity
         private static extern bool convertPLYToVDB(string filename, string outfile, LoggingCallback callback);
 
         [DllImport(libraryName)]
-        private static extern IntPtr generatePointArrayFromPointGrid(IntPtr gridRef, LoggingCallback cb);
-
-        [DllImport(libraryName)]
-        private static extern IntPtr generateColorArrayFromPointGrid(IntPtr gridRef);
-
-        [DllImport(libraryName)]
-        private static extern IntPtr arraysToPointGrid(IntPtr positionArr, IntPtr colorArr, int count);
-
-        [DllImport(libraryName)]
-        unsafe private static extern uint populateVertices(IntPtr gridRef, Matrix4x4 cameraMat, bool frustumCulling, bool lod, void* verts, LoggingCallback cb);
+        unsafe private static extern int populatePoints(IntPtr gridRef, void* points);
 
         #endregion
     }
