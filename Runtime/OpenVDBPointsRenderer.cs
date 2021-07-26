@@ -17,6 +17,7 @@ namespace OpenVDBPointsUnity
         #region serialized
         [SerializeField] bool frustumCulling;
         [SerializeField] bool lodAccumulation;
+        [SerializeField] bool occlusionCulling;
 
         // Visualization properties
         [SerializeField] Color pointColor;
@@ -28,10 +29,15 @@ namespace OpenVDBPointsUnity
         OpenVDBPointsData oldData;
         bool init = false;
 
-        NativeArray<Vertex> vertices;
-        // NativeArray<Vector3> vertices;
-        ComputeBuffer buffer;
-        uint visibleCount;
+        ComputeBuffer pointBuffer;
+
+        // Mask
+        NativeArray<int> layer1Mask;
+        NativeArray<int> layer2Mask;
+        NativeArray<int> leafNodeMask;
+        NativeArray<int> visiblePoints;
+        ComputeBuffer indexBuffer;
+        int visibleCount;
 
         Material mat;
 
@@ -40,8 +46,7 @@ namespace OpenVDBPointsUnity
 
         // [HideInInspector]
 
-
-        void OnRenderObject()
+        public void OnRenderObject()
         {
             if (data == null)
                 return;
@@ -51,43 +56,45 @@ namespace OpenVDBPointsUnity
                 // Lazy init
                 init = true;
 
-                // Initialize vertex arr and buffer
-                if (vertices.IsCreated)
-                    vertices.Dispose();
-                vertices = new NativeArray<Vertex>((int)data.Count, Allocator.Persistent);
-                // vertices = new NativeArray<Vector3>((int)data.Count, Allocator.Temp);
-                data.PopulateVertices(vertices);
-                Debug.Log(vertices[0]);
+                pointBuffer = new ComputeBuffer((int)data.Count, System.Runtime.InteropServices.Marshal.SizeOf(new Point()));
+                pointBuffer.SetData<Point>(data.Points);
 
-                buffer = new ComputeBuffer((int)data.Count, System.Runtime.InteropServices.Marshal.SizeOf(new Vertex()));
-                buffer.SetData<Vertex>(vertices);
-                // buffer = new ComputeBuffer((int)data.Count, sizeof(float) * 3);
-                // buffer.SetData<Vector3>(vertices);
-                
-                // vertices = new NativeArray<Vector3>((int)data.Count, Allocator.Temp);
-                // pointbuffer = new ComputeBuffer((int)data.Count, sizeof(float) * 3);
-                // pointbuffer.SetData<Vector3>(vertices);
+                // Initialize mask
+                layer1Mask = new NativeArray<int>((int)data.TreeShape.x, Unity.Collections.Allocator.Persistent);
+                layer2Mask = new NativeArray<int>((int)data.TreeShape.y, Unity.Collections.Allocator.Persistent);
+                leafNodeMask = new NativeArray<int>((int)data.TreeShape.z, Unity.Collections.Allocator.Persistent);
+
+                visiblePoints = new NativeArray<int>((int)data.Count, Unity.Collections.Allocator.Persistent);
+                indexBuffer = new ComputeBuffer((int)data.Count, sizeof(int));
+                indexBuffer.SetData<int>(visiblePoints);
 
                 // Initialize material
-                Debug.Log(Shader.Find("Custom/PointBuffer"));
                 mat = new Material(Shader.Find("Custom/PointBuffer"));
                 mat.hideFlags = HideFlags.DontSave;
                 mat.SetColor("_Color", new Color(0.5f, 0.5f, 0.5f, 1));
-                mat.SetBuffer("_Buffer", buffer);
+                mat.SetBuffer("_PointBuffer", pointBuffer);
+                mat.SetBuffer("_IndexBuffer", indexBuffer);
             }
 
             // Only need to update vertices if using VDB functionality
-            // if (frustumCulling || lodAccumulation) 
-                // data.UpdateVertices(vertices, Camera.current);
+            if (frustumCulling || lodAccumulation || occlusionCulling) 
+            {
+                data.PopulateTreeMask(Camera.current.worldToCameraMatrix * Camera.current.projectionMatrix, frustumCulling, lodAccumulation, occlusionCulling, layer1Mask, layer2Mask, leafNodeMask);
+                visibleCount = data.PopulateVisibleIndices(visiblePoints, layer1Mask, layer2Mask, leafNodeMask);
+                mat.SetInt("_UseIndexBuffer", 1);
+            }
+            else
+            {
+                visibleCount = (int)data.Count;
+                mat.SetInt("_UseIndexBuffer", 0);
+            }
 
             mat.SetPass(0);
             mat.SetMatrix("_Transform", transform.localToWorldMatrix);
             if (pointSize != 0)
                 mat.SetFloat("_PointSize", pointSize);
-            // mat.SetBuffer("_Buffer", buffer);
-            // Graphics.DrawProcedural(mat, MeshTopology.Points, (int)data.visibleCount, 1);
-            Graphics.DrawProceduralNow(MeshTopology.Points, (int)buffer.count, 1);
 
+            Graphics.DrawProceduralNow(MeshTopology.Points, visibleCount, 1);
 
             oldData = data;
         }
@@ -95,10 +102,19 @@ namespace OpenVDBPointsUnity
         void OnDisable()
         {
             Debug.Log("Disable");
-            if (buffer != null)
-                buffer.Release();
-            if (vertices.IsCreated)
-                vertices.Dispose();
+            if (pointBuffer != null)
+                pointBuffer.Release();
+            if (indexBuffer != null)
+                indexBuffer.Release();
+            if (layer1Mask.IsCreated)
+                layer1Mask.Dispose();
+            if (layer2Mask.IsCreated)
+                layer2Mask.Dispose();
+            if (leafNodeMask.IsCreated)
+                leafNodeMask.Dispose();
+            if (visiblePoints.IsCreated)
+                visiblePoints.Dispose();
+
             init = false;
         }
     }

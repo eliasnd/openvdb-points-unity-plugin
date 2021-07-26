@@ -25,10 +25,21 @@ Shader "Custom/PointBuffer" {
                 half4 col;
             };
 
-            int _PointCount;
-            StructuredBuffer<Point> _PointBuffer;
-            StructuredBuffer<int> _IndexBuffer;
-            int _UseIndexBuffer;
+            // Tree offsets
+
+            // Buffer that holds actual points to be rendered
+            StructuredBuffer<Point> _Buffer;
+            // StructuredBuffer<float3> _Buffer;
+
+            /* struct Vertex {
+                float3 pos;
+                fixed4 col;
+            };
+
+            struct Attributes {
+                float4 pos : POSITION;
+                fixed4 col : COLOR;
+            }; */
 
             struct v2f {
                 float4 pos : SV_POSITION;
@@ -40,15 +51,12 @@ Shader "Custom/PointBuffer" {
 
                 v2f o;
 
-                Point p;
-
-                if (_UseIndexBuffer == 1)
-                    p = _PointBuffer[_IndexBuffer[vid]];
-                else
-                    p = _PointBuffer[vid];
-
-                o.pos = UnityObjectToClipPos(mul(_Transform, float4(p.pos, 1)));
-                o.col = p.col;
+                // float4 pos = mul(_Transform, float4(_Buffer[vid], 1));
+                // float4 pos = float4(0,0,0,1);
+                // o.pos = UnityObjectToClipPos(pos);
+                o.pos = UnityObjectToClipPos(mul(_Transform, float4(_Buffer[vid].pos, 1)));
+                // o.col = _Color;
+                o.col = _Buffer[vid].col;
                 o.psize = _PointSize;
                 return o;
             }

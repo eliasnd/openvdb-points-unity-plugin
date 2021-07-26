@@ -2,10 +2,13 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEditor;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace OpenVDBPointsUnity
 {
+    [InitializeOnLoad]
     public static class OpenVDBPointsAPI
     {
         #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
@@ -18,6 +21,10 @@ namespace OpenVDBPointsUnity
 
         private static string gridName = "Points";
 
+        static OpenVDBPointsAPI()
+        {
+            openvdbInitialize();
+        }
         /// <summary>Initializes OpenVDB.</summary>
         public static void Initialize()
         {
@@ -58,17 +65,52 @@ namespace OpenVDBPointsUnity
             return getPointCountFromGrid(gridRef);
         }
 
-        unsafe public static int PopulateVertices(IntPtr gridRef, NativeArray<Vertex> verts)
+        unsafe public static int PopulateVertices(IntPtr gridRef, NativeArray<Point> verts)
         {
             unsafe
             {
-                return populatePoints(gridRef, Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(verts));
+                return populatePoints(gridRef, NativeArrayUnsafeUtility.GetUnsafePtr(verts));
             }
         }
 
         public static void FinalizeGrid(IntPtr gridRef)
         {
             destroyPointData(gridRef);
+        }
+
+        public static UInt32_3 GetTreeShape(IntPtr gridRef)
+        {
+            return getTreeShape(gridRef);
+        }
+
+        public static void PopulateTreeOffsets(IntPtr gridRef, NativeArray<int> layer1Offsets, NativeArray<int> layer2Offsets, NativeArray<int> leafNodeOffsets)
+        {
+            unsafe
+            {
+                populateTreeOffsets(
+                    gridRef, 
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(layer1Offsets), 
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(layer2Offsets), 
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(leafNodeOffsets)
+                );
+            }
+        }
+
+        public static void PopulateTreeMask(IntPtr gridRef, Matrix4x4 cam, bool frustumCulling, bool lod, bool occlusionCulling, NativeArray<int> layer1Offsets, NativeArray<int> layer2Offsets, NativeArray<int> leafNodeOffsets)
+        {
+            unsafe
+            {
+                populateTreeMask(
+                    gridRef, 
+                    cam,
+                    frustumCulling,
+                    lod,
+                    occlusionCulling,
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(layer1Offsets), 
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(layer2Offsets), 
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(leafNodeOffsets)
+                );
+            }
         }
 
         /// <summary> Default <see cref="LoggingCallback">callback</see> for logging native messages. </summary> 
@@ -119,6 +161,14 @@ namespace OpenVDBPointsUnity
         [DllImport(libraryName)]
         unsafe private static extern int populatePoints(IntPtr gridRef, void* points);
 
+        [DllImport(libraryName)]
+        unsafe private static extern UInt32_3 getTreeShape(IntPtr gridRef);
+
+        [DllImport(libraryName)]
+        unsafe private static extern void populateTreeOffsets(IntPtr gridRef, void* layer1Offsets, void* layer2Offsets, void* leafNodeOffsets);
+
+        [DllImport(libraryName)]
+        unsafe private static extern void populateTreeMask(IntPtr gridRef, Matrix4x4 cam, bool frustumCulling, bool lod, bool occlusionCulling, void* layer1Offsets, void* layer2Offsets, void* leafNodeOffsets);
         #endregion
     }
 }

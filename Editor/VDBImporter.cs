@@ -33,8 +33,8 @@ namespace OpenVDBPointsUnity
         OpenVDBPointsData ImportAsPointsData(string path)
         {
             OpenVDBPointsData pd = ScriptableObject.CreateInstance<OpenVDBPointsData>();
-            pd.Init(path);
-            // pd.FilePath = path;
+            // pd.Init(path);
+            pd.FilePath = path;
             return pd;
         }
     }
