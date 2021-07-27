@@ -44,13 +44,14 @@ namespace OpenVDBPointsUnity
 
         public UInt32_3 TreeShape { get; private set; }
 
+        public bool Init { get; private set; } = false;
+
         #endregion
 
         #region serialized
 
         [SerializeField] uint count = 0;
         [SerializeField] bool countCalculated = false;
-        [SerializeField] bool init = false;
 
 
         #endregion 
@@ -63,15 +64,18 @@ namespace OpenVDBPointsUnity
 
         public void Awake()
         {
-            if (FilePath != null && FilePath != "")
-                OnEnable();
+            Initialize();
         }
 
         // Possible eventual memory leak -- should make sure grid not already loaded
         public void OnEnable()
         {
             Debug.Log("OnEnable");
+            Initialize();
+        }
 
+        void Initialize()
+        {
             if (FilePath == "" || FilePath == null)
                 return;
                 // throw new Exception("A file path is required to populate point data. Consider using Init(string filePath) instead.");
@@ -91,7 +95,7 @@ namespace OpenVDBPointsUnity
 
             OpenVDBPointsAPI.PopulateTreeOffsets(gridRef, Layer1Offsets, Layer2Offsets, LeafNodeOffsets);
 
-            init = true;
+            Init = true;
         }
 
         public NativeArray<int>[] GenerateTreeMask(Matrix4x4 camera, bool frustumCulling, bool lod, bool occlusionCulling)
@@ -114,24 +118,29 @@ namespace OpenVDBPointsUnity
         {
             int i = 0;
 
-            for (int n = 0; n < (int)TreeShape.z-1; n++)
+            for (int l1 = 0; l1 < layer1Mask.Length; l1++)
             {
-                if (leafNodeMask[n] == 0)
+                if (layer1Mask[l1] == 0)
                     continue;
 
-                for (int j = LeafNodeOffsets[n]; j < LeafNodeOffsets[n+1]; j++)
+                for (int l2 = (l1 == 0 ? 0 : Layer1Offsets[l1-1]); l2 < Layer1Offsets[l1]; l2++)
                 {
-                    target[i] = j;
-                    i++;
+                    if (layer2Mask[l2] == 0)
+                        continue;
+
+                    for (int l3 = (l2 == 0 ? 0 : Layer2Offsets[l2-1]); l3 < Layer2Offsets[l2]; l3++)
+                    {
+                        if (leafNodeMask[l3] == 0)
+                            continue;
+
+                        for (int j = (l3 == 0 ? 0 : LeafNodeOffsets[l3-1]); j < LeafNodeOffsets[l3]; j++)
+                        {
+                            target[i] = j;
+                            i++;
+                        }
+                    }
                 }
             }
-
-            if (leafNodeMask[(int)TreeShape.z-1] != 0)
-                for (int j = LeafNodeOffsets[(int)TreeShape.z-1]; j < Count; j++)
-                {
-                    target[i] = j;
-                    i++;
-                }
 
             return i;
         }
@@ -164,6 +173,7 @@ namespace OpenVDBPointsUnity
 
         public void OnBeforeSerialize()
         {
+            Debug.Log("Serialize");
             Dispose();
         }
 
@@ -193,6 +203,16 @@ namespace OpenVDBPointsUnity
         {
             Debug.Log("Destroy");
             Dispose();
+        }
+
+        public void OnValidate()
+        {
+            Debug.Log("Validate");
+        }
+
+        public void Reset()
+        {
+            Debug.Log("Reset");
         }
     }
 }

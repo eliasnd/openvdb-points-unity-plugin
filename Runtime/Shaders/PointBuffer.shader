@@ -16,17 +16,17 @@ Shader "Custom/PointBuffer" {
 
             #include "UnityCG.cginc"
 
-            half3 _Color;
-            float _PointSize;
-            float4x4 _Transform;
-
             struct Point {
                 float3 pos;
                 half4 col;
             };
 
-            int _PointCount;
+            half3 _Color;
+            float _PointSize;
+            float4x4 _Transform;
+
             StructuredBuffer<Point> _PointBuffer;
+
             StructuredBuffer<int> _IndexBuffer;
             int _UseIndexBuffer;
 
@@ -42,10 +42,13 @@ Shader "Custom/PointBuffer" {
 
                 Point p;
 
-                if (_UseIndexBuffer == 1)
+                if (_UseIndexBuffer == 1) {
                     p = _PointBuffer[_IndexBuffer[vid]];
-                else
+                } else {
                     p = _PointBuffer[vid];
+                }
+
+                p = _PointBuffer[vid];
 
                 o.pos = UnityObjectToClipPos(mul(_Transform, float4(p.pos, 1)));
                 o.col = p.col;

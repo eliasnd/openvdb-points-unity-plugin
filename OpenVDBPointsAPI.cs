@@ -108,7 +108,8 @@ namespace OpenVDBPointsUnity
                     occlusionCulling,
                     Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(layer1Offsets), 
                     Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(layer2Offsets), 
-                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(leafNodeOffsets)
+                    Unity.Collections.LowLevel.Unsafe.NativeArrayUnsafeUtility.GetUnsafePtr(leafNodeOffsets),
+                    LogMessage
                 );
             }
         }
@@ -168,7 +169,7 @@ namespace OpenVDBPointsUnity
         unsafe private static extern void populateTreeOffsets(IntPtr gridRef, void* layer1Offsets, void* layer2Offsets, void* leafNodeOffsets);
 
         [DllImport(libraryName)]
-        unsafe private static extern void populateTreeMask(IntPtr gridRef, Matrix4x4 cam, bool frustumCulling, bool lod, bool occlusionCulling, void* layer1Offsets, void* layer2Offsets, void* leafNodeOffsets);
+        unsafe private static extern void populateTreeMask(IntPtr gridRef, Matrix4x4 cam, bool frustumCulling, bool lod, bool occlusionCulling, void* layer1Offsets, void* layer2Offsets, void* leafNodeOffsets, LoggingCallback callback);
         #endregion
     }
 }
