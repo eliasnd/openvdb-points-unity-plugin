@@ -49,6 +49,9 @@ namespace OpenVDBPointsUnity
 
         public void OnRenderObject()
         {
+            var watch = new System.Diagnostics.Stopwatch();
+            watch.Start();
+
             if (data == null || !data.Init)
                 return;
 
@@ -90,16 +93,56 @@ namespace OpenVDBPointsUnity
             // Only need to update vertices if using VDB functionality
             if (frustumCulling || lodAccumulation || occlusionCulling) 
             {
+                var dataWatch = new System.Diagnostics.Stopwatch();
+                dataWatch.Start();
+
                 data.PopulateTreeMask(
-                    mvp.transpose,
+                    transform.localToWorldMatrix.transpose,
+                    Camera.current.worldToCameraMatrix.transpose,
+                    Camera.current.projectionMatrix.transpose,
                     frustumCulling, lodAccumulation, occlusionCulling, layer1Mask, layer2Mask, leafNodeMask
                 );
+
+                dataWatch.Stop();
+                Debug.Log("Populate tree mask time: " + dataWatch.ElapsedMilliseconds);
+                dataWatch.Reset();
+                dataWatch.Start();
+
                 visibleCount = data.PopulateVisibleIndices(visiblePoints, layer1Mask, layer2Mask, leafNodeMask);
+
+                dataWatch.Stop();
+                Debug.Log("Populate visible indices time: " + dataWatch.ElapsedMilliseconds);
+
                 indexBuffer.SetData<int>(visiblePoints);
-                Debug.Log(visibleCount);
+                // Debug.Log(visibleCount);
                 mat.SetInt("_UseIndexBuffer", 1);
                 // Debug.Log("C#");
                 // Debug.Log(mvp);
+
+                // Debug.Log(Camera.current.projectionMatrix * Camera.current.worldToCameraMatrix * transform.localToWorldMatrix);
+
+                /* Vector3[] corners = {
+                    new Vector3(0.000000f, 0.000000f, 93.020159f),
+                    new Vector3(0.000000f, 0.000000f, 124.019308f),
+                    new Vector3(0.000000f, 30.999150f, 93.020159f ),
+                    new Vector3(0.000000f, 30.999150f, 124.019308f ),
+                    new Vector3(30.999150f, 0.000000f, 93.020159f ),
+                    new Vector3(30.999150f, 0.000000f, 124.019308f ),
+                    new Vector3(30.999150f, 30.999150f, 93.020159f ),
+                    new Vector3(30.999150f, 30.999150f, 124.019308f )
+                };
+
+
+                Debug.Log("Corners clip space:");
+                for (int i = 0; i < 8; i++) {
+                    // Debug.Log("Start");
+                    // Debug.Log(corners[i]);
+                    Vector4 clip = mvp * new Vector4(corners[i].x, corners[i].y, corners[i].z, 1);
+                    // Debug.Log("Clipped");
+                    // Debug.Log(clip);
+                    Vector3 ndc = new Vector3(clip.w / clip.z, clip.x / clip.z, clip.y / clip.z);
+                    Debug.Log(corners[i].ToString() + " --> " + ndc.ToString());
+                } */
             }
             else
             {
@@ -107,25 +150,6 @@ namespace OpenVDBPointsUnity
                 mat.SetInt("_UseIndexBuffer", 0);
             }
 
-            /* Vector3[] corners = {
-                new Vector3(0.000000f, 0.000000f, 93.020159f),
-                new Vector3(0.000000f, 0.000000f, 124.019308f),
-                new Vector3(0.000000f, 30.999150f, 93.020159f ),
-                new Vector3(0.000000f, 30.999150f, 124.019308f ),
-                new Vector3(30.999150f, 0.000000f, 93.020159f ),
-                new Vector3(30.999150f, 0.000000f, 124.019308f )
-            };
-
-
-            for (int i = 0; i < 8; i++) {
-                Debug.Log("Start");
-                Debug.Log(corners[i]);
-                Vector4 clip = mvp * new Vector4(corners[i].x, corners[i].y, corners[i].z, 1);
-                Debug.Log("Clipped");
-                Debug.Log(clip);
-                Vector3 ndc = new Vector3(clip.w / clip.z, clip.x / clip.z, clip.y / clip.z);
-                Debug.Log(ndc);
-            } */
 
             // visibleCount = (int)data.Count;
             // mat.SetInt("_UseIndexBuffer", 0);
@@ -141,6 +165,9 @@ namespace OpenVDBPointsUnity
             // pointBuffer.GetData(points);
 
             oldData = data;
+
+            watch.Stop();
+            Debug.Log("Render time: " + watch.ElapsedMilliseconds);
         }
 
         void Dispose()

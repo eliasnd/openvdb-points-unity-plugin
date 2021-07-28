@@ -103,7 +103,7 @@ namespace OpenVDBPointsUnity
             Init = true;
         }
 
-        public NativeArray<int>[] GenerateTreeMask(Matrix4x4 camera, bool frustumCulling, bool lod, bool occlusionCulling)
+        /* public NativeArray<int>[] GenerateTreeMask(Matrix4x4 camera, bool frustumCulling, bool lod, bool occlusionCulling)
         {
             NativeArray<int> layer1Mask = new NativeArray<int>((int)TreeShape.x, Unity.Collections.Allocator.Persistent);
             NativeArray<int> layer2Mask = new NativeArray<int>((int)TreeShape.y, Unity.Collections.Allocator.Persistent);
@@ -112,11 +112,11 @@ namespace OpenVDBPointsUnity
             OpenVDBPointsAPI.PopulateTreeMask(gridRef, camera, frustumCulling, lod, occlusionCulling, layer1Mask, layer2Mask, leafNodeMask);
 
             return new NativeArray<int>[] {layer1Mask, layer2Mask, leafNodeMask};
-        }
+        } */
 
-        public void PopulateTreeMask(Matrix4x4 camera, bool frustumCulling, bool lod, bool occlusionCulling, NativeArray<int> layer1Mask, NativeArray<int> layer2Mask, NativeArray<int> leafNodeMask)
+        public void PopulateTreeMask(Matrix4x4 model, Matrix4x4 view, Matrix4x4 projection, bool frustumCulling, bool lod, bool occlusionCulling, NativeArray<int> layer1Mask, NativeArray<int> layer2Mask, NativeArray<int> leafNodeMask)
         {
-            OpenVDBPointsAPI.PopulateTreeMask(gridRef, camera, frustumCulling, lod, occlusionCulling, layer1Mask, layer2Mask, leafNodeMask);
+            OpenVDBPointsAPI.PopulateTreeMask(gridRef, model, view, projection, frustumCulling, lod, occlusionCulling, layer1Mask, layer2Mask, leafNodeMask);
         }
         
         public int PopulateVisibleIndices(NativeArray<int> target, NativeArray<int> layer1Mask, NativeArray<int> layer2Mask, NativeArray<int> leafNodeMask)
@@ -125,17 +125,17 @@ namespace OpenVDBPointsUnity
 
             for (int l1 = 0; l1 < layer1Mask.Length; l1++)
             {
-                if (layer1Mask[l1] == 0)
+                if (layer1Mask[l1] == -1)
                     continue;
 
                 for (int l2 = (l1 == 0 ? 0 : Layer1Offsets[l1-1]); l2 < Layer1Offsets[l1]; l2++)
                 {
-                    if (layer2Mask[l2] == 0)
+                    if (layer2Mask[l2] == -1)
                         continue;
 
                     for (int l3 = (l2 == 0 ? 0 : Layer2Offsets[l2-1]); l3 < Layer2Offsets[l2]; l3++)
                     {
-                        if (leafNodeMask[l3] == 0)
+                        if (leafNodeMask[l3] == -1)
                             continue;
 
                         for (int j = (l3 == 0 ? 0 : LeafNodeOffsets[l3-1]); j < LeafNodeOffsets[l3]; j++)

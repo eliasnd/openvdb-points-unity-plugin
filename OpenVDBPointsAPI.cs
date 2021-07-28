@@ -96,13 +96,15 @@ namespace OpenVDBPointsUnity
             }
         }
 
-        public static void PopulateTreeMask(IntPtr gridRef, Matrix4x4 cam, bool frustumCulling, bool lod, bool occlusionCulling, NativeArray<int> layer1Offsets, NativeArray<int> layer2Offsets, NativeArray<int> leafNodeOffsets)
+        public static void PopulateTreeMask(IntPtr gridRef, Matrix4x4 model, Matrix4x4 view, Matrix4x4 projection, bool frustumCulling, bool lod, bool occlusionCulling, NativeArray<int> layer1Offsets, NativeArray<int> layer2Offsets, NativeArray<int> leafNodeOffsets)
         {
             unsafe
             {
                 populateTreeMask(
                     gridRef, 
-                    cam,
+                    model,
+                    view,
+                    projection,
                     frustumCulling,
                     lod,
                     occlusionCulling,
@@ -169,7 +171,7 @@ namespace OpenVDBPointsUnity
         unsafe private static extern void populateTreeOffsets(IntPtr gridRef, void* layer1Offsets, void* layer2Offsets, void* leafNodeOffsets);
 
         [DllImport(libraryName)]
-        unsafe private static extern void populateTreeMask(IntPtr gridRef, Matrix4x4 cam, bool frustumCulling, bool lod, bool occlusionCulling, void* layer1Offsets, void* layer2Offsets, void* leafNodeOffsets, LoggingCallback callback);
+        unsafe private static extern void populateTreeMask(IntPtr gridRef, Matrix4x4 model, Matrix4x4 view, Matrix4x4 projection, bool frustumCulling, bool lod, bool occlusionCulling, void* layer1Offsets, void* layer2Offsets, void* leafNodeOffsets, LoggingCallback callback);
         #endregion
     }
 }
