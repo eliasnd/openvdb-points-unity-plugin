@@ -82,7 +82,7 @@ namespace OpenVDBPointsUnity
                 mat.hideFlags = HideFlags.DontSave;
                 mat.SetColor("_Color", new Color(0.5f, 0.5f, 0.5f, 1));
                 mat.SetBuffer("_PointBuffer", pointBuffer);
-                // mat.SetBuffer("_IndexBuffer", indexBuffer);
+                mat.SetBuffer("_IndexBuffer", indexBuffer);
             }
 
             Matrix4x4 mvp = Camera.current.projectionMatrix * Camera.current.worldToCameraMatrix * transform.localToWorldMatrix;

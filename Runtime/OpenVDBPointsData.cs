@@ -64,14 +64,17 @@ namespace OpenVDBPointsUnity
 
         public void Awake()
         {
-            Initialize();
+            Debug.Log("Awake");
+            // if (!Init)
+                Initialize();
         }
 
         // Possible eventual memory leak -- should make sure grid not already loaded
         public void OnEnable()
         {
             Debug.Log("OnEnable");
-            Initialize();
+            if (!Init)
+                Initialize();
         }
 
         void Initialize()
@@ -92,6 +95,8 @@ namespace OpenVDBPointsUnity
             Layer1Offsets = new NativeArray<int>((int)TreeShape.x, Unity.Collections.Allocator.Persistent);
             Layer2Offsets = new NativeArray<int>((int)TreeShape.y, Unity.Collections.Allocator.Persistent);
             LeafNodeOffsets = new NativeArray<int>((int)TreeShape.z, Unity.Collections.Allocator.Persistent);
+
+            Debug.Log("Alloced native arrays");
 
             OpenVDBPointsAPI.PopulateTreeOffsets(gridRef, Layer1Offsets, Layer2Offsets, LeafNodeOffsets);
 
@@ -184,12 +189,15 @@ namespace OpenVDBPointsUnity
 
         void Dispose()
         {
-            Debug.Log("Dispose");
+            // Debug.Log("Dispose");
             OpenVDBPointsAPI.FinalizeGrid(gridRef);
             Points.Dispose();
             Layer1Offsets.Dispose();
             Layer2Offsets.Dispose();
             LeafNodeOffsets.Dispose();
+
+            Init = false;
+            Debug.Log("Disposed native arrays");
         }
 
         public void OnDisable()
@@ -213,6 +221,7 @@ namespace OpenVDBPointsUnity
         public void Reset()
         {
             Debug.Log("Reset");
+            // Dispose();
         }
     }
 }

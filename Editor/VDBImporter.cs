@@ -15,7 +15,7 @@ namespace OpenVDBPointsUnity
     {
         public override void OnImportAsset(AssetImportContext ctx)
         {
-            Debug.Log("Import");
+            // Debug.Log("Import");
             GetAbsoluteAssetPath(ctx);
 
             OpenVDBPointsData pd = ImportAsPointsData(absoluteAssetPath);

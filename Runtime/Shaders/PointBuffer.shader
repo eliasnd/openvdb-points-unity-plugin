@@ -48,7 +48,7 @@ Shader "Custom/PointBuffer" {
                     p = _PointBuffer[vid];
                 }
 
-                p = _PointBuffer[vid];
+                // p = _PointBuffer[vid];
 
                 o.pos = UnityObjectToClipPos(mul(_Transform, float4(p.pos, 1)));
                 o.col = p.col;
