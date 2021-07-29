@@ -73,6 +73,14 @@ namespace OpenVDBPointsUnity
             }
         }
 
+        unsafe public static void PopulateAccumulatedPoints(IntPtr gridRef, NativeArray<Point> points)
+        {
+            unsafe
+            {
+                populateAccumulatedPoints(gridRef, NativeArrayUnsafeUtility.GetUnsafePtr(points));
+            }
+        }
+
         public static void FinalizeGrid(IntPtr gridRef)
         {
             destroyPointData(gridRef);
@@ -165,6 +173,9 @@ namespace OpenVDBPointsUnity
         unsafe private static extern int populatePoints(IntPtr gridRef, void* points);
 
         [DllImport(libraryName)]
+        unsafe private static extern void populateAccumulatedPoints(IntPtr gridRef, void* points);
+
+        [DllImport(libraryName)]
         unsafe private static extern UInt32_3 getTreeShape(IntPtr gridRef);
 
         [DllImport(libraryName)]
@@ -172,6 +183,7 @@ namespace OpenVDBPointsUnity
 
         [DllImport(libraryName)]
         unsafe private static extern void populateTreeMask(IntPtr gridRef, Matrix4x4 model, Matrix4x4 view, Matrix4x4 projection, bool frustumCulling, bool lod, bool occlusionCulling, void* layer1Offsets, void* layer2Offsets, void* leafNodeOffsets, LoggingCallback callback);
+
         #endregion
     }
 }

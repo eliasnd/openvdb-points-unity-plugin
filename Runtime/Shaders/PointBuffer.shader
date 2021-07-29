@@ -26,6 +26,7 @@ Shader "Custom/PointBuffer" {
             float4x4 _Transform;
 
             StructuredBuffer<Point> _PointBuffer;
+            StructuredBuffer<Point> _AccumulatedBuffer;
 
             StructuredBuffer<int> _IndexBuffer;
             int _UseIndexBuffer;
@@ -42,13 +43,18 @@ Shader "Custom/PointBuffer" {
 
                 Point p;
 
-                if (_UseIndexBuffer == 1) {
-                    p = _PointBuffer[_IndexBuffer[vid]];
+                /* if (_UseIndexBuffer == 1) {
+                    int pid = _IndexBuffer[vid];
+                    // p = _PointBuffer[pid];
+                    if (pid >= 0)
+                        p = _PointBuffer[pid];
+                    else
+                        p = _AccumulatedBuffer[0-pid];
                 } else {
                     p = _PointBuffer[vid];
-                }
+                } */
 
-                // p = _PointBuffer[vid];
+                p = _PointBuffer[vid];
 
                 o.pos = UnityObjectToClipPos(mul(_Transform, float4(p.pos, 1)));
                 o.col = p.col;

@@ -37,6 +37,7 @@ namespace OpenVDBPointsUnity
         }
 
         public NativeArray<Point> Points { get; private set; }
+        public NativeArray<Point> AccumulatedPoints { get; private set; }
 
         public NativeArray<int> Layer1Offsets { get; private set; }
         public NativeArray<int> Layer2Offsets { get; private set; }
@@ -96,6 +97,9 @@ namespace OpenVDBPointsUnity
             Layer2Offsets = new NativeArray<int>((int)TreeShape.y, Unity.Collections.Allocator.Persistent);
             LeafNodeOffsets = new NativeArray<int>((int)TreeShape.z, Unity.Collections.Allocator.Persistent);
 
+            AccumulatedPoints = new NativeArray<Point>((int)(TreeShape.x + TreeShape.y + TreeShape.z), Unity.Collections.Allocator.Persistent);
+            OpenVDBPointsAPI.PopulateAccumulatedPoints(gridRef, AccumulatedPoints);
+
             Debug.Log("Alloced native arrays");
 
             OpenVDBPointsAPI.PopulateTreeOffsets(gridRef, Layer1Offsets, Layer2Offsets, LeafNodeOffsets);
@@ -128,15 +132,36 @@ namespace OpenVDBPointsUnity
                 if (layer1Mask[l1] == -1)
                     continue;
 
+                if (layer1Mask[l1] == 0)
+                {
+                    target[i] = -l1;
+                    i++;
+                    continue;
+                }
+
                 for (int l2 = (l1 == 0 ? 0 : Layer1Offsets[l1-1]); l2 < Layer1Offsets[l1]; l2++)
                 {
                     if (layer2Mask[l2] == -1)
                         continue;
 
+                    if (layer2Mask[l2] == 0)
+                    {
+                        target[i] = -(int)TreeShape.x - l2;
+                        i++;
+                        continue;
+                    }
+
                     for (int l3 = (l2 == 0 ? 0 : Layer2Offsets[l2-1]); l3 < Layer2Offsets[l2]; l3++)
                     {
                         if (leafNodeMask[l3] == -1)
                             continue;
+
+                        if (leafNodeMask[l3] == 0)
+                        {
+                            target[i] = -(int)TreeShape.x - (int)TreeShape.y - l3;
+                            i++;
+                            continue;
+                        }
 
                         for (int j = (l3 == 0 ? 0 : LeafNodeOffsets[l3-1]); j < LeafNodeOffsets[l3]; j++)
                         {
@@ -195,6 +220,7 @@ namespace OpenVDBPointsUnity
             Layer1Offsets.Dispose();
             Layer2Offsets.Dispose();
             LeafNodeOffsets.Dispose();
+            AccumulatedPoints.Dispose();
 
             Init = false;
             Debug.Log("Disposed native arrays");

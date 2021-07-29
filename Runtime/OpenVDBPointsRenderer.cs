@@ -30,6 +30,7 @@ namespace OpenVDBPointsUnity
         bool init = false;
 
         ComputeBuffer pointBuffer;
+        ComputeBuffer accumulatedPointBuffer;
         Point[] points;
 
         // Mask
@@ -49,6 +50,7 @@ namespace OpenVDBPointsUnity
 
         public void OnRenderObject()
         {
+            var dataWatch = new System.Diagnostics.Stopwatch();
             var watch = new System.Diagnostics.Stopwatch();
             watch.Start();
 
@@ -64,6 +66,9 @@ namespace OpenVDBPointsUnity
 
                 pointBuffer = new ComputeBuffer((int)data.Count, System.Runtime.InteropServices.Marshal.SizeOf(new Point()));
                 pointBuffer.SetData<Point>(data.Points);
+
+                accumulatedPointBuffer = new ComputeBuffer((int)(data.TreeShape.x + data.TreeShape.y + data.TreeShape.z), System.Runtime.InteropServices.Marshal.SizeOf(new Point()));
+                accumulatedPointBuffer.SetData<Point>(data.AccumulatedPoints);
                 
                 // Test contents of point buffer
                 points = new Point[(int)data.Count];
@@ -85,6 +90,7 @@ namespace OpenVDBPointsUnity
                 mat.hideFlags = HideFlags.DontSave;
                 mat.SetColor("_Color", new Color(0.5f, 0.5f, 0.5f, 1));
                 mat.SetBuffer("_PointBuffer", pointBuffer);
+                mat.SetBuffer("_AccumulatedBuffer", accumulatedPointBuffer);
                 mat.SetBuffer("_IndexBuffer", indexBuffer);
             }
 
@@ -93,7 +99,6 @@ namespace OpenVDBPointsUnity
             // Only need to update vertices if using VDB functionality
             if (frustumCulling || lodAccumulation || occlusionCulling) 
             {
-                var dataWatch = new System.Diagnostics.Stopwatch();
                 dataWatch.Start();
 
                 data.PopulateTreeMask(
@@ -159,7 +164,13 @@ namespace OpenVDBPointsUnity
             if (pointSize != 0)
                 mat.SetFloat("_PointSize", pointSize);
 
+            dataWatch.Reset();
+            dataWatch.Start();
+
             Graphics.DrawProceduralNow(MeshTopology.Points, visibleCount, 1);
+
+            dataWatch.Stop();
+            Debug.Log("Draw time for " + visibleCount + " points: " + dataWatch.ElapsedMilliseconds);
 
             // Test contents of point buffer
             // pointBuffer.GetData(points);
@@ -175,6 +186,8 @@ namespace OpenVDBPointsUnity
             Debug.Log("Disable");
             if (pointBuffer != null)
                 pointBuffer.Release();
+            if (accumulatedPointBuffer != null)
+                accumulatedPointBuffer.Release();
             if (indexBuffer != null)
                 indexBuffer.Release();
             if (layer1Mask.IsCreated)
