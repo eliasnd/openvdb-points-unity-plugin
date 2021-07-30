@@ -1,0 +1,37 @@
+#pragma kernel CSMain 
+
+#define GROUP_SIZE_X 8
+#define GROUP_SIZE_Y 8 
+
+int3 _GroupDimensions;
+
+int3 _TreeShape;
+StructuredBuffer<int> _LeafNodeOffsets;
+StructuredBuffer<int> _LeafNodeMask;
+
+AppendStructuredBuffer<int> _IndexBuffer;
+
+[numthreads(GROUP_SIZE_X, GROUP_SIZE_Y, 1)]
+void CSMain(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
+{
+    int index = groupID.x * _GroupDimensions.y + groupID.y * _GroupDimensions.z + groupID.z + groupIndex;
+
+    if (index >= _TreeShape.z || _LeafNodeMask[index] == -1)
+        return;
+
+    if (_LeafNodeMask[index] == 0)
+    {
+        _IndexBuffer.Append(-_TreeShape.x - _TreeShape.y - index);
+        return;
+    }
+
+    int startIndex;
+
+    if (index == 0)
+        startIndex = 0;
+    else
+        startIndex = _LeafNodeOffsets[index-1];
+
+    for (int i = startIndex; i < _LeafNodeOffsets[index]; i++)
+        _IndexBuffer.Append(i);
+}

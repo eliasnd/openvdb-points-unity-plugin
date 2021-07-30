@@ -31,8 +31,7 @@ Shader "Custom/PointBuffer" {
             StructuredBuffer<Point> _PointBuffer;
             StructuredBuffer<Point> _AccumulatedBuffer;
 
-            // StructuredBuffer<int> _IndexBuffer;
-            ConsumeBuffer<int> _IndexBuffer;
+            StructuredBuffer<int> _IndexBuffer;
             int _UseIndexBuffer;
 
             struct v2f {
@@ -48,8 +47,7 @@ Shader "Custom/PointBuffer" {
                 Point p;
 
                 if (_UseIndexBuffer == 1) {
-                    int pid = _IndexBuffer.Consume();
-                    // int pid = _IndexBuffer[vid];
+                    int pid = _IndexBuffer[vid];
                     // p = _PointBuffer[pid];
                     if (pid >= 0)
                         p = _PointBuffer[pid];

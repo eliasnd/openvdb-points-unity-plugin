@@ -180,18 +180,36 @@ namespace OpenVDBPointsUnity
             int c = 0;
             for (int l1 = 0; l1 < (int)TreeShape.x; l1++)
             {
-                if (layer1Mask[l1] == 0)
+                if (layer1Mask[l1] == -1)
                     continue;
+            
+                if (layer1Mask[l1] == 0)
+                {
+                    c++;
+                    continue;
+                }
                 
                 for (int l2 = Layer1Offsets[l1]; l2 < (l1 == (int)TreeShape.x-1 ? (int)TreeShape.y : Layer1Offsets[l1+1]); l2++)
                 {
-                    if (layer2Mask[l2] == 0)
+                    if (layer2Mask[l2] == -1)
                         continue;
+
+                    if (layer2Mask[l2] == 0)
+                    {
+                        c++;
+                        continue;
+                    }
 
                     for (int l3 = Layer2Offsets[l2]; l3 < (l2 == (int)TreeShape.y-1 ? (int)TreeShape.z : Layer2Offsets[l2+1]); l3++)
                     {
-                        if (leafNodeMask[l3] == 0)
+                        if (leafNodeMask[l3] == -1)
                             continue;
+
+                        if (leafNodeMask[l3] == 0)
+                        {
+                            c++;
+                            continue;
+                        }
 
                         c += (l3 == (int)TreeShape.z-1 ? (int)Count : LeafNodeOffsets[l3+1]) - LeafNodeOffsets[l3];
                     }

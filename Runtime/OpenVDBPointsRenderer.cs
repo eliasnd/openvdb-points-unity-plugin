@@ -33,11 +33,17 @@ namespace OpenVDBPointsUnity
         ComputeBuffer accumulatedPointBuffer;
         Point[] points;
 
+        ComputeBuffer leafNodeOffsetBuffer;
+
         // Mask
         NativeArray<int> layer1Mask;
         NativeArray<int> layer2Mask;
         NativeArray<int> leafNodeMask;
+        ComputeBuffer leafNodeMaskBuffer;
         NativeArray<int> visiblePoints;
+
+        public ComputeShader computeShader;
+        int kernelHandle;
         ComputeBuffer indexBuffer;
         int visibleCount;
 
@@ -54,7 +60,7 @@ namespace OpenVDBPointsUnity
             var watch = new System.Diagnostics.Stopwatch();
             watch.Start();
 
-            if (data == null || !data.Init)
+            if (data == null || !data.Init || computeShader == null)
                 return;
 
             if (!init || oldData != data) {
@@ -79,10 +85,19 @@ namespace OpenVDBPointsUnity
                 layer1Mask = new NativeArray<int>((int)data.TreeShape.x, Unity.Collections.Allocator.Persistent);
                 layer2Mask = new NativeArray<int>((int)data.TreeShape.y, Unity.Collections.Allocator.Persistent);
                 leafNodeMask = new NativeArray<int>((int)data.TreeShape.z, Unity.Collections.Allocator.Persistent);
-
                 visiblePoints = new NativeArray<int>((int)data.Count, Unity.Collections.Allocator.Persistent);
-                indexBuffer = new ComputeBuffer((int)data.Count, sizeof(int));
-                indexBuffer.SetData<int>(visiblePoints);
+
+                // Initialize buffers
+                indexBuffer = new ComputeBuffer((int)data.Count, sizeof(int), ComputeBufferType.Append);
+                // indexBuffer = new ComputeBuffer((int)data.Count, sizeof(int));
+                // indexBuffer.SetData<int>(visiblePoints);
+
+                leafNodeOffsetBuffer = new ComputeBuffer((int)(data.TreeShape.z), sizeof(int));
+                leafNodeOffsetBuffer.SetData<int>(data.LeafNodeOffsets);
+
+                leafNodeMaskBuffer = new ComputeBuffer((int)(data.TreeShape.z), sizeof(int));
+                leafNodeMaskBuffer.SetData<int>(leafNodeMask);
+
 
                 // Initialize material
                 Debug.Log(Shader.Find("Custom/PointBuffer"));
@@ -92,6 +107,15 @@ namespace OpenVDBPointsUnity
                 mat.SetBuffer("_PointBuffer", pointBuffer);
                 mat.SetBuffer("_AccumulatedBuffer", accumulatedPointBuffer);
                 mat.SetBuffer("_IndexBuffer", indexBuffer);
+
+                // Initialize compute shader
+                // computeShader = (ComputeShader)Resources.Load("Runtime/Shaders/VisiblePoints.compute");
+                kernelHandle = computeShader.FindKernel("CSMain");
+                computeShader.SetInts("_GroupDimensions", (int)Mathf.Ceil(data.TreeShape.z / 64.0f), 1, 1);
+                computeShader.SetInts("_TreeShape", (int)data.TreeShape.x, (int)data.TreeShape.y, (int)data.TreeShape.z);
+                computeShader.SetBuffer(kernelHandle, "_LeafNodeOffsets", leafNodeOffsetBuffer);
+                computeShader.SetBuffer(kernelHandle, "_LeafNodeMask", leafNodeMaskBuffer);
+                computeShader.SetBuffer(kernelHandle, "_IndexBuffer", indexBuffer);
             }
 
             Matrix4x4 mvp = Camera.current.projectionMatrix * Camera.current.worldToCameraMatrix * transform.localToWorldMatrix;
@@ -99,12 +123,15 @@ namespace OpenVDBPointsUnity
             // Only need to update vertices if using VDB functionality
             if (frustumCulling || lodAccumulation || occlusionCulling) 
             {
+                // Camera cam = Camera.main; // Uncomment this to visualize frustum culling in Scene view
+                Camera cam = Camera.current; 
+
                 dataWatch.Start();
 
                 data.PopulateTreeMask(
                     transform.localToWorldMatrix.transpose,
-                    Camera.current.worldToCameraMatrix.transpose,
-                    Camera.current.projectionMatrix.transpose,
+                    cam.worldToCameraMatrix.transpose,
+                    cam.projectionMatrix.transpose,
                     frustumCulling, lodAccumulation, occlusionCulling, layer1Mask, layer2Mask, leafNodeMask
                 );
 
@@ -113,41 +140,14 @@ namespace OpenVDBPointsUnity
                 dataWatch.Reset();
                 dataWatch.Start();
 
-                visibleCount = data.PopulateVisibleIndices(visiblePoints, layer1Mask, layer2Mask, leafNodeMask);
+                // visibleCount = data.PopulateVisibleIndices(visiblePoints, layer1Mask, layer2Mask, leafNodeMask);
+                // indexBuffer.SetData<int>(visiblePoints);
+                computeShader.Dispatch(kernelHandle, (int)Mathf.Ceil(data.TreeShape.z / 64.0f), 1, 1);
 
                 dataWatch.Stop();
                 Debug.Log("Populate visible indices time: " + dataWatch.ElapsedMilliseconds);
 
-                indexBuffer.SetData<int>(visiblePoints);
-                // Debug.Log(visibleCount);
                 mat.SetInt("_UseIndexBuffer", 1);
-                // Debug.Log("C#");
-                // Debug.Log(mvp);
-
-                // Debug.Log(Camera.current.projectionMatrix * Camera.current.worldToCameraMatrix * transform.localToWorldMatrix);
-
-                /* Vector3[] corners = {
-                    new Vector3(0.000000f, 0.000000f, 93.020159f),
-                    new Vector3(0.000000f, 0.000000f, 124.019308f),
-                    new Vector3(0.000000f, 30.999150f, 93.020159f ),
-                    new Vector3(0.000000f, 30.999150f, 124.019308f ),
-                    new Vector3(30.999150f, 0.000000f, 93.020159f ),
-                    new Vector3(30.999150f, 0.000000f, 124.019308f ),
-                    new Vector3(30.999150f, 30.999150f, 93.020159f ),
-                    new Vector3(30.999150f, 30.999150f, 124.019308f )
-                };
-
-
-                Debug.Log("Corners clip space:");
-                for (int i = 0; i < 8; i++) {
-                    // Debug.Log("Start");
-                    // Debug.Log(corners[i]);
-                    Vector4 clip = mvp * new Vector4(corners[i].x, corners[i].y, corners[i].z, 1);
-                    // Debug.Log("Clipped");
-                    // Debug.Log(clip);
-                    Vector3 ndc = new Vector3(clip.w / clip.z, clip.x / clip.z, clip.y / clip.z);
-                    Debug.Log(corners[i].ToString() + " --> " + ndc.ToString());
-                } */
             }
             else
             {
