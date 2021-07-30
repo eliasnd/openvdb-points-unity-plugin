@@ -92,11 +92,17 @@ namespace OpenVDBPointsUnity
                 // indexBuffer = new ComputeBuffer((int)data.Count, sizeof(int));
                 // indexBuffer.SetData<int>(visiblePoints);
 
+                int[] debug = new int[(int)data.TreeShape.z];
+
                 leafNodeOffsetBuffer = new ComputeBuffer((int)(data.TreeShape.z), sizeof(int));
                 leafNodeOffsetBuffer.SetData<int>(data.LeafNodeOffsets);
 
+                leafNodeOffsetBuffer.GetData(debug);
+
                 leafNodeMaskBuffer = new ComputeBuffer((int)(data.TreeShape.z), sizeof(int));
                 leafNodeMaskBuffer.SetData<int>(leafNodeMask);
+
+                leafNodeMaskBuffer.GetData(debug);
 
 
                 // Initialize material
@@ -135,6 +141,10 @@ namespace OpenVDBPointsUnity
                     frustumCulling, lodAccumulation, occlusionCulling, layer1Mask, layer2Mask, leafNodeMask
                 );
 
+                leafNodeMaskBuffer.SetData<int>(leafNodeMask);
+
+                visibleCount = data.CountVisiblePoints(layer1Mask, layer2Mask, leafNodeMask);
+
                 dataWatch.Stop();
                 Debug.Log("Populate tree mask time: " + dataWatch.ElapsedMilliseconds);
                 dataWatch.Reset();
@@ -143,6 +153,8 @@ namespace OpenVDBPointsUnity
                 // visibleCount = data.PopulateVisibleIndices(visiblePoints, layer1Mask, layer2Mask, leafNodeMask);
                 // indexBuffer.SetData<int>(visiblePoints);
                 computeShader.Dispatch(kernelHandle, (int)Mathf.Ceil(data.TreeShape.z / 64.0f), 1, 1);
+                // int[] indices = new int[visibleCount];
+                // indexBuffer.GetData(indices);
 
                 dataWatch.Stop();
                 Debug.Log("Populate visible indices time: " + dataWatch.ElapsedMilliseconds);
@@ -175,10 +187,11 @@ namespace OpenVDBPointsUnity
             // Test contents of point buffer
             // pointBuffer.GetData(points);
 
+            indexBuffer.SetCounterValue(0);
             oldData = data;
 
             watch.Stop();
-            Debug.Log("Render time: " + watch.ElapsedMilliseconds);
+            Debug.Log("Rendering " + visibleCount + " points in " + watch.ElapsedMilliseconds + "ms");
         }
 
         void Dispose()

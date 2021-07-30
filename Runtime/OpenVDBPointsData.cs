@@ -189,7 +189,7 @@ namespace OpenVDBPointsUnity
                     continue;
                 }
                 
-                for (int l2 = Layer1Offsets[l1]; l2 < (l1 == (int)TreeShape.x-1 ? (int)TreeShape.y : Layer1Offsets[l1+1]); l2++)
+                for (int l2 = (l1 == 0 ? 0 : Layer1Offsets[l1-1]); l2 < Layer1Offsets[l1]; l2++)
                 {
                     if (layer2Mask[l2] == -1)
                         continue;
@@ -200,7 +200,7 @@ namespace OpenVDBPointsUnity
                         continue;
                     }
 
-                    for (int l3 = Layer2Offsets[l2]; l3 < (l2 == (int)TreeShape.y-1 ? (int)TreeShape.z : Layer2Offsets[l2+1]); l3++)
+                    for (int l3 = (l2 == 0 ? 0 : Layer2Offsets[l2-1]); l3 < Layer2Offsets[l2]; l3++)
                     {
                         if (leafNodeMask[l3] == -1)
                             continue;
